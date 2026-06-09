@@ -10,26 +10,158 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Serve the dashboards (root + /dashboard). We do NOT static-serve the whole
 // project dir so that data.json / server.js stay private.
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'VIP_CRM.html')));
-app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'vip_dashboard.html')));
+// /dashboard route removed: legacy static page (would bypass auth/role money-hiding)
 app.get('/healthz', (req, res) => res.json({ ok: true }));
 
+const crypto = require('crypto');
 const DATA_FILE = path.join(__dirname, 'data.json');
 
 // ─────────────────────────────────────────────
-// DATA HELPERS
+// AUTH HELPERS (no extra deps — crypto only)
 // ─────────────────────────────────────────────
-function loadData() {
-  if (!fs.existsSync(DATA_FILE)) {
-    const init = { settings: { botToken: '', adminChatId: '' }, clients: [] };
-    fs.writeFileSync(DATA_FILE, JSON.stringify(init, null, 2));
-    return init;
+const SECRET = process.env.SESSION_SECRET || 'dev-secret-change-me-please';
+function signToken(payload) {
+  const b = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const sig = crypto.createHmac('sha256', SECRET).update(b).digest('base64url');
+  return b + '.' + sig;
+}
+function verifyToken(tok) {
+  if (!tok) return null;
+  const [b, sig] = String(tok).split('.');
+  if (!b || !sig) return null;
+  const exp = crypto.createHmac('sha256', SECRET).update(b).digest('base64url');
+  if (exp !== sig) return null;
+  try { const p = JSON.parse(Buffer.from(b, 'base64url').toString()); if (p.exp && Date.now() > p.exp) return null; return p; }
+  catch (e) { return null; }
+}
+function hashPw(pw) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const h = crypto.scryptSync(String(pw), salt, 64).toString('hex');
+  return salt + ':' + h;
+}
+function checkPw(pw, stored) {
+  if (!stored || !stored.includes(':')) return false;
+  const [salt, h] = stored.split(':');
+  const hh = crypto.scryptSync(String(pw), salt, 64).toString('hex');
+  try { return crypto.timingSafeEqual(Buffer.from(h, 'hex'), Buffer.from(hh, 'hex')); } catch (e) { return false; }
+}
+function getToken(req) {
+  const a = req.headers.authorization || '';
+  if (a.startsWith('Bearer ')) return a.slice(7);
+  const c = req.headers.cookie || '';
+  const m = c.match(/(?:^|;\s*)crm_token=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+// ─────────────────────────────────────────────
+// CENTRAL STORE (MongoDB Atlas, file/memory fallback)
+// ─────────────────────────────────────────────
+let mongo = null, col = null, usersCol = null;
+let STORE = { settings: { botToken: '', adminChatId: '' }, clients: [] };
+let USERS = [];
+
+function loadData() { return STORE; }
+function saveData(data) { STORE = data; persist(); }
+function persist() {
+  if (col) { col.updateOne({ _id: 'main' }, { $set: { data: STORE } }, { upsert: true }).catch(e => console.error('persist:', e.message)); }
+  else { try { fs.writeFileSync(DATA_FILE, JSON.stringify(STORE, null, 2)); } catch (e) {} }
+}
+
+function findUser(u) { return USERS.find(x => x.username.toLowerCase() === String(u || '').toLowerCase()); }
+async function saveUser(user) {
+  if (usersCol) { await usersCol.updateOne({ username: user.username }, { $set: user }, { upsert: true }); }
+  const i = USERS.findIndex(x => x.username === user.username);
+  if (i >= 0) USERS[i] = user; else USERS.push(user);
+}
+async function seedUsers() {
+  const defaults = [
+    { username: 'super',  role: 'super',  pw: 'changeme-super' },
+    { username: 'normal', role: 'normal', pw: 'changeme-normal' }
+  ];
+  if (usersCol) {
+    for (const d of defaults) { const ex = await usersCol.findOne({ username: d.username }); if (!ex) await usersCol.insertOne({ username: d.username, role: d.role, pw: hashPw(d.pw) }); }
+    USERS = await usersCol.find({}).toArray();
+  } else if (!USERS.length) {
+    USERS = defaults.map(d => ({ username: d.username, role: d.role, pw: hashPw(d.pw) }));
   }
-  try { return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); }
-  catch(e) { console.error('Data read error:', e); return { settings:{}, clients:[] }; }
+  console.log('👤 사용자 계정 준비 완료 (기본: super / normal)');
 }
-function saveData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+
+async function initStore() {
+  if (fs.existsSync(DATA_FILE)) { try { STORE = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); } catch (e) {} }
+  const uri = process.env.MONGODB_URI;
+  if (uri) {
+    try {
+      const { MongoClient } = require('mongodb');
+      mongo = new MongoClient(uri);
+      await mongo.connect();
+      const db = mongo.db(process.env.MONGODB_DB || 'vipcrm');
+      col = db.collection('crmdata');
+      usersCol = db.collection('users');
+      const doc = await col.findOne({ _id: 'main' });
+      if (doc && doc.data) STORE = doc.data;
+      else await col.updateOne({ _id: 'main' }, { $set: { data: STORE } }, { upsert: true });
+      console.log('✅ MongoDB Atlas 연결 완료 (중앙 DB)');
+    } catch (e) {
+      console.error('⚠️  MongoDB 연결 실패 — 파일/메모리 저장으로 대체:', e.message);
+      mongo = null; col = null; usersCol = null;
+    }
+  } else {
+    console.log('ℹ️  MONGODB_URI 미설정 — 파일/메모리 저장 사용 (재시작 시 초기화될 수 있음)');
+  }
+  await seedUsers();
 }
+
+// Money fields hidden from Normal Admin
+function stripMoney(data) {
+  const copy = JSON.parse(JSON.stringify(data));
+  (copy.clients || []).forEach(c => { c.paymentAmount = ''; });
+  return copy;
+}
+function mergeMoneyFromStore(incoming) {
+  const byId = {}; (STORE.clients || []).forEach(c => { byId[c.id] = c; });
+  (incoming.clients || []).forEach(c => { const cur = byId[c.id]; if (cur) c.paymentAmount = cur.paymentAmount; });
+  return incoming;
+}
+
+// ─────────────────────────────────────────────
+// API AUTH GUARD  (everything under /api needs a valid token,
+// except login + external webhooks)
+// ─────────────────────────────────────────────
+const OPEN_API = ['/login', '/docusign-webhook', '/docusign-new', '/bot-status'];
+app.use('/api', (req, res, next) => {
+  if (OPEN_API.includes(req.path)) return next();
+  const p = verifyToken(getToken(req));
+  if (!p) return res.status(401).json({ error: 'unauthorized' });
+  req.user = p;
+  next();
+});
+
+// Auth routes
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body || {};
+  const u = findUser(username);
+  if (!u || !checkPw(password, u.pw)) return res.status(401).json({ error: '아이디 또는 비밀번호가 올바르지 않습니다.' });
+  const token = signToken({ u: u.username, role: u.role, exp: Date.now() + 1000 * 60 * 60 * 12 });
+  res.json({ token, role: u.role, username: u.username });
+});
+app.get('/api/me', (req, res) => res.json({ username: req.user.u, role: req.user.role }));
+app.post('/api/change-password', async (req, res) => {
+  const { current, next: np } = req.body || {};
+  const u = findUser(req.user.u);
+  if (!u || !checkPw(current, u.pw)) return res.status(400).json({ error: '현재 비밀번호가 올바르지 않습니다.' });
+  if (!np || String(np).length < 6) return res.status(400).json({ error: '새 비밀번호는 6자 이상이어야 합니다.' });
+  u.pw = hashPw(np); await saveUser(u);
+  res.json({ success: true });
+});
+// Super admin: create/replace a user
+app.post('/api/users', async (req, res) => {
+  if (req.user.role !== 'super') return res.status(403).json({ error: 'super 관리자만 가능합니다.' });
+  const { username, password, role } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: '아이디와 비밀번호가 필요합니다.' });
+  await saveUser({ username, role: role === 'super' ? 'super' : 'normal', pw: hashPw(password) });
+  res.json({ success: true });
+});
 
 // ─────────────────────────────────────────────
 // STEP SEQUENCES
@@ -230,7 +362,13 @@ function initBot(token) {
 // API ROUTES
 // ─────────────────────────────────────────────
 
-app.get('/api/data', (req, res) => res.json(loadData()));
+app.get('/api/data', (req, res) => res.json(req.user && req.user.role === 'normal' ? stripMoney(loadData()) : loadData()));
+app.put('/api/data', (req, res) => {
+  let incoming = req.body || {};
+  if (req.user && req.user.role === 'normal') incoming = mergeMoneyFromStore(incoming);
+  saveData(incoming);
+  res.json({ success: true });
+});
 
 app.get('/api/steps', (req, res) => res.json(STEPS));
 
@@ -595,14 +733,16 @@ app.post('/api/tax/blast', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`\n🚀 VIP CRM Dashboard: http://localhost:${PORT}`);
-  console.log('────────────────────────────────────────');
-  const d = loadData();
-  if (d.settings.botToken) {
-    initBot(d.settings.botToken);
-  } else {
-    console.log('⚠️  Telegram 봇 미설정. 브라우저에서 Settings 탭 열고 Bot Token 입력 필요.');
-  }
-  initMailer(d.settings);
-});
+initStore().then(() => {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 VIP CRM Dashboard: http://localhost:${PORT}`);
+    console.log('────────────────────────────────────────');
+    const d = loadData();
+    if (d.settings && d.settings.botToken) {
+      initBot(d.settings.botToken);
+    } else {
+      console.log('⚠️  Telegram 봇 미설정. 로그인 후 Settings 탭에서 Bot Token 입력 가능.');
+    }
+    initMailer(d.settings || {});
+  });
+}).catch(e => { console.error('초기화 실패:', e); process.exit(1); });

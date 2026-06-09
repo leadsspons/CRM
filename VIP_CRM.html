@@ -172,9 +172,40 @@ tr:hover td{background:rgba(184,151,42,.05);cursor:pointer}
 .chk.on{background:var(--green);color:#000}.chk.off{background:#2a2a40;border:1px dashed #555;color:#555}
 .bk-item{display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--card2);border-radius:6px;font-size:11.5px;cursor:pointer}
 .notice-box{background:#10101c;border:1px solid #333;border-radius:8px;padding:14px;font-size:12px;color:var(--text);white-space:pre-wrap;line-height:1.65;max-height:340px;overflow-y:auto;font-family:'Segoe UI','Malgun Gothic',sans-serif}
+/* ── Auth / role ── */
+body.role-normal .money{display:none !important}
+#login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#12121f,#1a1a2e);z-index:5000;display:flex;align-items:center;justify-content:center}
+#login-overlay.hidden{display:none}
+.login-card{background:var(--card);border:1px solid var(--gold);border-radius:16px;padding:36px 34px;width:360px;max-width:92vw;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.login-card h2{color:var(--gold2);font-size:20px;margin-bottom:4px;text-align:center}
+.login-card .sub{color:var(--muted);font-size:11px;text-align:center;margin-bottom:22px}
+.login-card label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px;margin-top:12px}
+.login-card input{width:100%;background:#1a1a2c;border:1px solid #333;color:var(--text);border-radius:6px;padding:10px 12px;font-size:13px}
+.login-card input:focus{outline:none;border-color:var(--gold)}
+.login-card button.login-go{width:100%;margin-top:20px;background:var(--gold);color:#000;border:none;border-radius:6px;padding:11px;font-size:14px;font-weight:700;cursor:pointer}
+.login-card button.login-go:hover{background:var(--gold2)}
+.login-err{color:var(--red);font-size:11px;margin-top:10px;text-align:center;min-height:14px}
+.user-badge{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.role-pill{padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700}
+.role-pill.super{background:rgba(184,151,42,.25);color:var(--gold2)}
+.role-pill.normal{background:rgba(92,158,224,.2);color:var(--blue)}
 </style>
 </head>
 <body>
+
+<!-- LOGIN GATE -->
+<div id="login-overlay">
+  <div class="login-card">
+    <h2 id="login-title">⭐ VIP CRM 로그인</h2>
+    <div class="sub" id="login-sub">Super Admin 전용 화면 · 로그인 필요</div>
+    <label id="login-id-label">아이디</label>
+    <input id="login-username" autocomplete="username" placeholder="super / normal">
+    <label id="login-pw-label">비밀번호</label>
+    <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••">
+    <button class="login-go" id="login-btn" onclick="submitLogin()">로그인</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
 
 <div class="hdr">
   <div class="hdr-left">
@@ -186,11 +217,15 @@ tr:hover td{background:rgba(184,151,42,.05);cursor:pointer}
       <div class="hs"><div class="v" id="h-total">0</div><div class="l">총 고객</div></div>
       <div class="hs"><div class="v" id="h-active">0</div><div class="l">활성 계약</div></div>
       <div class="hs"><div class="v" id="h-tbd">0</div><div class="l">TBD (예정)</div></div>
-      <div class="hs"><div class="v" id="h-rev" style="color:var(--gold2)">-</div><div class="l">총 계약액 (추정)</div></div>
+      <div class="hs money"><div class="v" id="h-rev" style="color:var(--gold2)">-</div><div class="l">총 계약액 (추정)</div></div>
     </div>
     <div class="lang-toggle" title="언어 선택 / Language">
       <button class="lang-btn" id="lang-ko" onclick="setLang('ko')"><span class="flag">🇰🇷</span>한국어</button>
       <button class="lang-btn" id="lang-en" onclick="setLang('en')"><span class="flag">🇬🇧</span>EN</button>
+    </div>
+    <div id="user-box" style="display:flex;align-items:center;gap:10px">
+      <span class="user-badge" id="user-badge"></span>
+      <button class="btn bg bsm" onclick="logout()">로그아웃</button>
     </div>
   </div>
 </div>
@@ -236,7 +271,7 @@ tr:hover td{background:rgba(184,151,42,.05);cursor:pointer}
   <div class="tw">
     <table><thead><tr>
       <th>#</th><th>고객사</th><th>대표자</th><th>계약일</th>
-      <th>결제계좌</th><th>결제금액</th><th>서비스 항목 (1~16)</th><th>진행률</th><th>상태</th>
+      <th>결제계좌</th><th class="money">결제금액</th><th>서비스 항목 (1~16)</th><th>진행률</th><th>상태</th>
     </tr></thead><tbody id="ov-tbody"></tbody></table>
   </div>
 </div>
@@ -889,46 +924,21 @@ const CAT_B   = { company:'b-co', doctor:'b-dr', goldenvisa:'b-gv', realestate:'
 const LS_KEY    = 'vip_crm_data_v2';
 const DB_VER    = 'v2.3';   // 버전 올림 → 기존 LS 무시하고 DEFAULT 재적재
 
-function loadData() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) {
-      const d = JSON.parse(raw);
-      // 같은 버전이고 18명 이상 있으면 저장 데이터 사용
-      if (d._ver === DB_VER && d.clients && d.clients.length >= 18) {
-        // 누락 필드 보완
-        d.clients.forEach(c => {
-          if (!c.stepDates) c.stepDates = {};
-          if (!c.phoneUae) c.phoneUae = '';
-          if (!c.email) c.email = '';
-        });
-        return d;
-      }
-      // 구버전 or 고객 수 부족 → DEFAULT로 병합
-      if (d.clients && d.clients.length > 0) {
-        const merged = JSON.parse(JSON.stringify(DEFAULT_CLIENTS));
-        // 사용자가 수정한 내용 덮어쓰기
-        d.clients.forEach(sc => {
-          const idx = merged.findIndex(c => c.id === sc.id);
-          if (idx >= 0) merged[idx] = Object.assign({}, merged[idx], sc);
-        });
-        return { _ver: DB_VER, clients: merged };
-      }
-    }
-  } catch(e) { console.warn('loadData error', e); }
-  // 첫 실행 또는 복구 불가 → DEFAULT 그대로
-  return { _ver: DB_VER, clients: JSON.parse(JSON.stringify(DEFAULT_CLIENTS)) };
-}
+function loadData() { return DB; }
 
 function saveData(data) {
-  data._ver = DB_VER;
-  localStorage.setItem(LS_KEY, JSON.stringify(data));
-  const now = new Date();
+  DB = data; DB._ver = DB_VER;
   const el = document.getElementById('last-saved');
-  if(el) el.textContent = '저장됨: ' + now.toLocaleTimeString('ko-KR');
+  if(el) el.textContent = (typeof LANG!=='undefined'&&LANG==='en') ? 'Saving...' : '저장 중...';
+  clearTimeout(window._saveT);
+  window._saveT = setTimeout(()=>{
+    fetch('/api/data', { method:'PUT', headers: getAuthHeaders(), body: JSON.stringify(DB) })
+      .then(r=>{ if(!r.ok) throw 0; const e=document.getElementById('last-saved'); if(e) e.textContent=((typeof LANG!=='undefined'&&LANG==='en')?'Saved ':'저장됨 ')+new Date().toLocaleTimeString(); })
+      .catch(()=>{ const e=document.getElementById('last-saved'); if(e) e.textContent=((typeof LANG!=='undefined'&&LANG==='en')?'⚠ save failed':'⚠ 저장 실패'); });
+  }, 400);
 }
 
-let DB = loadData();
+let DB = { _ver: DB_VER, settings:{}, clients: [] };
 
 // ─── 날짜 헬퍼 (스케줄 자동설정보다 먼저 선언) ───────────
 function parseEntryDate(str) {
@@ -946,7 +956,7 @@ function toInputDate(d) {
 // ────────────────────────────────────────────────────────
 
 // 기존 데이터 중 법인+입국일 있는데 stepDates 없는 고객 자동 초기화
-(function initMissingSchedules() {
+function initMissingSchedules() {
   let changed = false;
   DB.clients.forEach(c => {
     if(c.category==='company' && c.entryDate && c.entryDate!=='TBD') {
@@ -963,7 +973,7 @@ function toInputDate(d) {
     }
   });
   if(changed) saveData(DB);
-})();
+}
 
 // ═══════════════════════════════════════════════════════
 // TABS
@@ -1024,7 +1034,7 @@ function renderOverview() {
     statEl.innerHTML=`
       <div class="sc"><div class="v">${total}</div><div class="l">전체 고객 수</div></div>
       <div class="sc c2"><div class="v">${prog}</div><div class="l">서비스 진행 중</div></div>
-      <div class="sc c3"><div class="v">${revStr}</div><div class="l">총 계약 금액 (추정)</div></div>
+      <div class="sc c3 money"><div class="v">${revStr}</div><div class="l">총 계약 금액 (추정)</div></div>
       <div class="sc c4"><div class="v">${thisM}</div><div class="l">이번 달 완료 예정</div></div>`;
   }
 
@@ -1063,7 +1073,7 @@ function renderOverview() {
       <td>${c.rep||''}</td>
       <td>${c.contractDate||'TBD'}</td>
       <td>${payTag}</td>
-      <td style="color:var(--gold2)">${c.paymentAmount||'-'}</td>
+      <td class="money" style="color:var(--gold2)">${c.paymentAmount||'-'}</td>
       <td>${dotsHtml}</td>
       <td>
         <div class="pb"><div class="pf" style="width:${isTbd?0:pct}%"></div></div>
@@ -1163,7 +1173,7 @@ function buildDetCard(c) {
     </div>
     <div class="cc-meta">
       <div class="cc-mi"><label>결제 계좌</label><span>${c.paymentAccount?`<span class="pay-tag">${c.paymentAccount}</span>`:'-'}</span></div>
-      <div class="cc-mi"><label>결제 금액</label><span style="color:var(--gold2)">${c.paymentAmount||'-'}</span></div>
+      <div class="cc-mi money"><label>결제 금액</label><span style="color:var(--gold2)">${c.paymentAmount||'-'}</span></div>
       <div class="cc-mi"><label>메모</label><span style="font-size:11px;color:var(--muted)">${c.notes||'-'}</span></div>
     </div>
     ${c.entryDate?`<div style="font-size:11px;color:var(--orange);margin-bottom:12px">✈️ 입국 예정: ${c.entryDate}</div>`:''}
@@ -1433,7 +1443,7 @@ function buildCRMCard(c){
     </div>` : ''}
     ${autoBtn ? `<div style="margin-bottom:12px">${autoBtn}${!hasEntry?' <span style="font-size:10px;color:var(--muted);margin-left:6px">(입국일 필요)</span>':''}</div>` : ''}
     <div class="cc-meta">
-      <div class="cc-mi"><label>결제금액</label><span style="color:var(--gold2)">${c.paymentAmount||'-'}</span></div>
+      <div class="cc-mi money"><label>결제금액</label><span style="color:var(--gold2)">${c.paymentAmount||'-'}</span></div>
       <div class="cc-mi"><label>결제계좌</label><span>${c.paymentAccount||'-'}</span></div>
       <div class="cc-mi"><label>메모</label><span style="font-size:11px;color:var(--muted)">${c.notes||'-'}</span></div>
     </div>
@@ -1852,7 +1862,7 @@ const I18N = {
   "📑 세금 안내문 (Tax Announcement)":"📑 Tax Announcement"
 };
 
-function setLang(l){ LANG = l; localStorage.setItem(LANG_KEY, l); if(typeof renderAll==='function'){ renderAll(); } else { applyLang(); } }
+function setLang(l){ LANG = l; localStorage.setItem(LANG_KEY, l); if(typeof renderAll==='function'){ renderAll(); } else { applyLang(); } if(typeof updateUserBadge==='function') updateUserBadge(); }
 
 function applyLang(){
   document.documentElement.lang = LANG;
@@ -2083,8 +2093,105 @@ function openTaxBlast(){
 // ═══════════════════════════════════════════════════════
 // BOOT  (was missing — app never rendered on load)
 // ═══════════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', ()=>{ renderAll(); applyLang(); });
-if(document.readyState!=='loading'){ try{ renderAll(); applyLang(); }catch(e){} }
+document.addEventListener('DOMContentLoaded', ()=>{ boot(); });
+if(document.readyState!=='loading'){ boot(); }
+
+// ═══════════════════════════════════════════════════════
+// AUTH + CENTRAL DATA (server-backed) + ROLE
+// ═══════════════════════════════════════════════════════
+var TOKEN = '';
+try { TOKEN = localStorage.getItem('crm_token') || ''; } catch(e){}
+let ROLE = 'super';
+let ME = null;
+function getAuthHeaders(){ return { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN }; }
+
+async function apiMe(){
+  if(!TOKEN) return null;
+  try { const r = await fetch('/api/me', { headers: getAuthHeaders() }); if(!r.ok) return null; return await r.json(); }
+  catch(e){ return null; }
+}
+async function fetchServerData(){
+  const r = await fetch('/api/data', { headers: getAuthHeaders() });
+  if(!r.ok) throw new Error('data load failed');
+  return await r.json();
+}
+function showLogin(){
+  const o=document.getElementById('login-overlay'); if(o) o.classList.remove('hidden');
+  applyLang();
+}
+function hideLogin(){ const o=document.getElementById('login-overlay'); if(o) o.classList.add('hidden'); }
+
+async function submitLogin(){
+  const u=document.getElementById('login-username').value.trim();
+  const p=document.getElementById('login-password').value;
+  const err=document.getElementById('login-err'); if(err) err.textContent='';
+  try{
+    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})});
+    const d=await r.json();
+    if(!r.ok){ if(err) err.textContent = (LANG==='en'?'Invalid username or password':(d.error||'로그인 실패')); return; }
+    TOKEN=d.token; try{ localStorage.setItem('crm_token',TOKEN); }catch(e){}
+    await startApp();
+  }catch(e){ if(err) err.textContent=(LANG==='en'?'Login error':'로그인 오류'); }
+}
+function logout(){ try{ localStorage.removeItem('crm_token'); }catch(e){} TOKEN=''; location.reload(); }
+
+function updateUserBadge(){
+  const b=document.getElementById('user-badge');
+  if(b && ME){
+    const rk = ME.role==='super' ? (LANG==='en'?'Super Admin':'슈퍼 관리자') : (LANG==='en'?'Normal Admin':'일반 관리자');
+    b.innerHTML = `<span class="role-pill ${ME.role}">${rk}</span> ${ME.username}`;
+  }
+}
+
+async function startApp(){
+  const me = await apiMe();
+  if(!me){ showLogin(); return; }
+  ME = me; ROLE = me.role;
+  document.body.classList.remove('role-super','role-normal');
+  document.body.classList.add('role-'+ROLE);
+  hideLogin();
+  try{
+    const d = await fetchServerData();
+    DB = { _ver: DB_VER, settings: d.settings||{}, clients: d.clients||[] };
+  }catch(e){ DB = { _ver: DB_VER, settings:{}, clients: [] }; }
+  initMissingSchedules();
+  renderAll();
+  applyLang();
+  updateUserBadge();
+}
+
+function boot(){
+  // allow Enter key on login
+  const pw=document.getElementById('login-password');
+  if(pw && !pw._wired){ pw._wired=true; pw.addEventListener('keydown',e=>{ if(e.key==='Enter') submitLogin(); }); }
+  startApp();
+}
+
+// Expanded EN dictionary (full UI)
+Object.assign(I18N, {
+  // Login
+  "⭐ VIP CRM 로그인":"⭐ VIP CRM Login","Super Admin 전용 화면 · 로그인 필요":"Login required","아이디":"Username","비밀번호":"Password","로그인":"Sign in","로그아웃":"Log out",
+  "슈퍼 관리자":"Super Admin","일반 관리자":"Normal Admin",
+  // Legends / misc
+  "완료":"Done","진행 중":"In progress","미신청":"Not started","대기":"Waiting","계약예정":"pending contract","고객 없음":"No clients","연락처 없음":"No contacts",
+  "법인설립: 1=Freezone 2=비자 3=메디컬 4=바이오 5=EID 6=가상사무실 7=월별기장 8=개인은행 9=법인은행 10=핸드폰 11=법인인증 12=KYC 13=사업자등록증 14=법인등기 15=번역 16=레터헤드":"Company: 1=Freezone 2=Visa 3=Medical 4=Biometrics 5=EID 6=Virtual office 7=Monthly books 8=Personal bank 9=Corp bank 10=Phone 11=Corp cert 12=KYC 13=Business license 14=Corp registration 15=Translation 16=Letterhead",
+  // Card field labels
+  "결제 계좌":"Payment account","결제 금액":"Payment amount","입국 예정일":"Planned entry date","계약일":"Contract date","진행 상황":"Progress","진행 단계":"Steps","서비스 항목":"Service items","메모":"Notes","담당자":"Rep.","이메일":"Email","두바이 번호":"Dubai number","한국 연락처":"KR contact",
+  "✏️ 편집":"✏️ Edit","🗑 삭제":"🗑 Delete","📅 스케줄 자동설정":"📅 Auto-schedule","📨 메시지 보내기":"📨 Send message",
+  // Company services (16)
+  "Freezone Dubai 설립 (라이센스)":"Freezone Dubai setup (license)","비자발급 ($3,650/1명당)":"Visa issuance ($3,650/person)","메디컬 테스트":"Medical test","바이오메트릭스 등록":"Biometrics registration","Emirate ID Card 등록 신청":"Emirates ID Card application","가상 사무실 렌트비":"Virtual office rent","월별 기장 서비스":"Monthly bookkeeping service","개인 은행 계좌개설":"Personal bank account","법인 은행 계좌개설":"Corporate bank account","현지 핸드폰 번호개설 가이드":"Local phone number guide","법인인증, 사업자등록증서, Memorandum":"Corp cert, business license, Memorandum","대표자 인증 KYC":"Representative KYC","사업자등록증 발급":"Business license issuance","법인등기 수수료 납부 가이드":"Corp registration fee guide","전체 등기 문서 번역 제출":"Full document translation","법률문서 (Letter Head) Template 제작":"Legal letterhead template",
+  // Doctor services (9)
+  "Doctor licensing Data flow 등록 / credentialing / application fee":"Doctor licensing DataFlow / credentialing / application fee","Primary Source Verification (PSV) / 문서검증":"Primary Source Verification (PSV) / document check","DHA Doctor Licensing Test (Prometric Test, service fee 포함)":"DHA Doctor Licensing Test (Prometric, incl. service fee)","License activation (공식 라이센스 발급 비용) 1년":"License activation (official, 1 year)","문서 검토, 번역, 공증, attestation 비용 + 행정 대행":"Document review, translation, notarization, attestation + admin","DataFlow Submission, DHA Communication, Report Management":"DataFlow submission, DHA communication, report management","(선택) 취업 알선, 병원 지원 서비스 비용":"(Optional) Job placement / hospital support","(선택) 병의원 개업시 핸들링 피 (총 비용 대비 5%)":"(Optional) Clinic opening handling fee (5% of total)","이주/정착 지원 (숙소, 초기 정착, 라이프라인 세팅, 보험, 비자)":"Relocation/settlement support (housing, setup, utilities, insurance, visa)",
+  // Settings
+  "🔄 데이터 초기화":"🔄 Reset Data","🗑️ DB 초기화 (기본 18개 고객으로 리셋)":"🗑️ Reset DB (to default 18 clients)","💾 데이터 관리":"💾 Data Management","🔐 비밀번호 변경":"🔐 Change Password","현재 비밀번호":"Current password","새 비밀번호":"New password","변경":"Change",
+  "🖥️ 서버 모드 (시작.bat 실행 중)":"🖥️ Server mode (시작.bat running)","📂 오프라인 모드 (이 HTML 파일)":"📂 Offline mode (this HTML file)","📄 계약 JSON 가져오기":"📄 Import contract JSON","📋 URL 복사":"📋 Copy URL",
+  // Contacts tips
+  "💡 안내:":"💡 Note:","💡 사용법:":"💡 How to:","📖 오프라인 모드 안내:":"📖 Offline mode:","📖 DocuSign Connect 설정 방법:":"📖 DocuSign Connect setup:",
+  // Schedule labels
+  "이번 달":"This month","다음 달":"Next month","완료":"Done","지연":"Overdue",
+  // saving
+  "저장 중...":"Saving...","저장됨":"Saved"
+});
 </script>
 </body>
 </html>
