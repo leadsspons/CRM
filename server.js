@@ -75,8 +75,8 @@ async function saveUser(user) {
 }
 async function seedUsers() {
   const defaults = [
-    { username: 'super',  role: 'super',  pw: 'changeme-super' },
-    { username: 'normal', role: 'normal', pw: 'changeme-normal' }
+    { username: process.env.SUPER_USER  || 'super',  role: 'super',  pw: process.env.SUPER_PASS  || 'changeme-super'  },
+    { username: process.env.NORMAL_USER || 'normal', role: 'normal', pw: process.env.NORMAL_PASS || 'changeme-normal' }
   ];
   if (usersCol) {
     for (const d of defaults) { const ex = await usersCol.findOne({ username: d.username }); if (!ex) await usersCol.insertOne({ username: d.username, role: d.role, pw: hashPw(d.pw) }); }
