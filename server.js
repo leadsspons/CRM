@@ -7,6 +7,12 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Serve the dashboards (root + /dashboard). We do NOT static-serve the whole
+// project dir so that data.json / server.js stay private.
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'VIP_CRM.html')));
+app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'vip_dashboard.html')));
+app.get('/healthz', (req, res) => res.json({ ok: true }));
+
 const DATA_FILE = path.join(__dirname, 'data.json');
 
 // ─────────────────────────────────────────────
@@ -588,7 +594,7 @@ app.post('/api/tax/blast', async (req, res) => {
   res.json({ success: true, sent, failed, total: targets.length });
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n🚀 VIP CRM Dashboard: http://localhost:${PORT}`);
   console.log('────────────────────────────────────────');
