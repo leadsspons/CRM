@@ -148,6 +148,30 @@ tr:hover td{background:rgba(184,151,42,.05);cursor:pointer}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:#1a1a2a}
 ::-webkit-scrollbar-thumb{background:#444;border-radius:3px}
+/* -- Language toggle -- */
+.lang-toggle{display:flex;gap:0;border:1px solid var(--gold);border-radius:20px;overflow:hidden;flex-shrink:0}
+.lang-btn{background:transparent;border:none;color:var(--muted);padding:6px 12px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .15s}
+.lang-btn .flag{font-size:14px}
+.lang-btn.active{background:var(--gold);color:#000}
+.lang-btn:not(.active):hover{color:var(--gold2)}
+/* -- Tax tab -- */
+.tax-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.tax-sc{background:var(--card);border-radius:10px;padding:16px 18px;border-left:3px solid var(--red)}
+.tax-sc.warn{border-left-color:var(--orange)}.tax-sc.ok{border-left-color:var(--green)}.tax-sc.info{border-left-color:var(--blue)}
+.tax-sc .v{font-size:28px;font-weight:700;color:var(--red)}
+.tax-sc.warn .v{color:var(--orange)}.tax-sc.ok .v{color:var(--green)}.tax-sc.info .v{color:var(--blue)}
+.tax-sc .l{font-size:11px;color:var(--muted);margin-top:2px}
+.dday{display:inline-block;min-width:54px;text-align:center;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700}
+.dday.over{background:rgba(224,92,92,.2);color:var(--red)}
+.dday.soon{background:rgba(224,154,92,.2);color:var(--orange)}
+.dday.far{background:rgba(92,158,224,.15);color:var(--blue)}
+.tax-flag{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid #333}
+.tax-flag.on{background:rgba(76,175,130,.18);color:var(--green);border-color:var(--green)}
+.tax-flag.off{background:#2a2a40;color:var(--muted)}
+.chk{width:17px;height:17px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;flex-shrink:0}
+.chk.on{background:var(--green);color:#000}.chk.off{background:#2a2a40;border:1px dashed #555;color:#555}
+.bk-item{display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--card2);border-radius:6px;font-size:11.5px;cursor:pointer}
+.notice-box{background:#10101c;border:1px solid #333;border-radius:8px;padding:14px;font-size:12px;color:var(--text);white-space:pre-wrap;line-height:1.65;max-height:340px;overflow-y:auto;font-family:'Segoe UI','Malgun Gothic',sans-serif}
 </style>
 </head>
 <body>
@@ -157,11 +181,17 @@ tr:hover td{background:rgba(184,151,42,.05);cursor:pointer}
     <h1>⭐ VIP 고객 서비스 대시보드</h1>
     <p>Tax Announcement · UAE 법인설립 · 비자 서비스 관리 &nbsp;|&nbsp; 📂 오프라인 독립 실행 버전</p>
   </div>
-  <div class="hdr-stats">
-    <div class="hs"><div class="v" id="h-total">0</div><div class="l">총 고객</div></div>
-    <div class="hs"><div class="v" id="h-active">0</div><div class="l">활성 계약</div></div>
-    <div class="hs"><div class="v" id="h-tbd">0</div><div class="l">TBD (예정)</div></div>
-    <div class="hs"><div class="v" id="h-rev" style="color:var(--gold2)">-</div><div class="l">총 계약액 (추정)</div></div>
+  <div style="display:flex;align-items:center;gap:24px">
+    <div class="hdr-stats">
+      <div class="hs"><div class="v" id="h-total">0</div><div class="l">총 고객</div></div>
+      <div class="hs"><div class="v" id="h-active">0</div><div class="l">활성 계약</div></div>
+      <div class="hs"><div class="v" id="h-tbd">0</div><div class="l">TBD (예정)</div></div>
+      <div class="hs"><div class="v" id="h-rev" style="color:var(--gold2)">-</div><div class="l">총 계약액 (추정)</div></div>
+    </div>
+    <div class="lang-toggle" title="언어 선택 / Language">
+      <button class="lang-btn" id="lang-ko" onclick="setLang('ko')"><span class="flag">🇰🇷</span>한국어</button>
+      <button class="lang-btn" id="lang-en" onclick="setLang('en')"><span class="flag">🇬🇧</span>EN</button>
+    </div>
   </div>
 </div>
 
@@ -176,6 +206,7 @@ tr:hover td{background:rgba(184,151,42,.05);cursor:pointer}
   <div class="tab" onclick="showTab('goldenvisa')">🌟 골든비자 CRM</div>
   <div class="tab" onclick="showTab('realestate')">🏠 부동산 CRM</div>
   <div style="width:1px;background:#333;margin:6px 8px;flex-shrink:0"></div>
+  <div class="tab" onclick="showTab('tax')">📑 세금 안내 (Tax)</div>
   <div class="tab" onclick="showTab('contacts')">📬 연락처 & 발송</div>
   <div class="tab" onclick="showTab('settings')">⚙️ 설정</div>
 </div>
@@ -275,6 +306,33 @@ tr:hover td{background:rgba(184,151,42,.05);cursor:pointer}
     <button class="btn bp bsm" onclick="openAdd('realestate')">+ 고객 추가</button>
   </div>
   <div id="crm-realestate"></div>
+</div>
+
+<div id="tab-tax" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+    <div style="font-size:18px;font-weight:700;color:var(--gold2)">📑 월간 세금 안내 (Monthly Tax Announcement)</div>
+    <button class="btn bp bsm" onclick="openTaxBlast()">✉️ 월간 안내문 일괄 발송</button>
+  </div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:16px">한국 + UAE 세금 등록 관리 · 신고 D-day · 기장 필요서류 · 월별 안내문 자동 생성 (Invoice + Contract + Email reminder)</div>
+  <div class="tax-cards" id="tax-stats"></div>
+  <div class="sh">⏰ 다가오는 세금 신고 D-day <span style="font-size:10px;color:var(--muted);font-weight:400">UAE 법인세·VAT / 한국 종소세·법인세 / 월 기장·급여·운영비</span></div>
+  <div class="tw" style="margin-bottom:24px">
+    <table><thead><tr>
+      <th>구분</th><th>세금 항목</th><th>대상 고객</th><th>신고 마감일</th><th>D-day</th>
+    </tr></thead><tbody id="tax-dday-tbody"></tbody></table>
+  </div>
+  <div class="sh">🧾 고객별 세금 등록 & 기장 현황 <span style="font-size:10px;color:var(--muted);font-weight:400">클릭하여 등록/체크 · 안내문 생성</span></div>
+  <div class="fb">
+    <input type="text" id="tax-q" placeholder="🔍 고객명, 대표자 검색..." oninput="renderTax()">
+    <select id="tax-cat" onchange="renderTax()">
+      <option value="">전체 카테고리</option>
+      <option value="company">🏢 법인 설립</option>
+      <option value="doctor">👨‍⚕️ 의사 라이센싱</option>
+      <option value="goldenvisa">🌟 골든비자</option>
+      <option value="realestate">🏠 부동산</option>
+    </select>
+  </div>
+  <div id="tax-container"></div>
 </div>
 
 <div id="tab-contacts" class="page">
@@ -536,6 +594,29 @@ tr:hover td{background:rgba(184,151,42,.05);cursor:pointer}
   <div class="ma">
     <button class="btn bg" onclick="closeMb()">취소</button>
     <button class="btn bp" onclick="saveClient()">저장</button>
+  </div>
+</div>
+</div>
+
+<!-- TAX ANNOUNCEMENT MODAL -->
+<div class="mb" id="tax-modal-bg" onclick="if(event.target===this)closeTaxModal()">
+<div class="modal" style="width:620px">
+  <div class="modal-title" id="tax-modal-title">📑 세금 안내문 (Tax Announcement)</div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button class="lang-btn active" id="tax-mlang-ko" onclick="setTaxNoticeLang('ko')" style="border:1px solid var(--gold);border-radius:8px"><span class="flag">🇰🇷</span>한국어</button>
+    <button class="lang-btn" id="tax-mlang-en" onclick="setTaxNoticeLang('en')" style="border:1px solid var(--gold);border-radius:8px"><span class="flag">🇬🇧</span>English</button>
+    <div style="flex:1"></div>
+    <span id="tax-modal-client" style="font-size:11px;color:var(--muted);align-self:center"></span>
+  </div>
+  <div class="notice-box" id="tax-notice-box"></div>
+  <div class="ma" style="flex-wrap:wrap">
+    <button class="btn bg" onclick="closeTaxModal()">닫기</button>
+    <button class="btn bg" onclick="copyTaxNotice()">📋 안내문 복사</button>
+    <button class="btn bg" onclick="emailTaxNotice()">✉️ 이메일 앱으로 열기</button>
+    <button class="btn bp" onclick="sendTaxNoticeServer()">🚀 이메일 자동발송 (서버)</button>
+  </div>
+  <div class="tipbox" style="margin-top:6px">
+    <strong>💡 발송 방식:</strong> "복사"는 카카오/메일에 붙여넣기용, "이메일 앱으로 열기"는 기본 메일 앱(mailto), "자동발송(서버)"은 시작.bat 서버 + Gmail 설정 시 즉시 전송됩니다.
   </div>
 </div>
 </div>
@@ -907,6 +988,8 @@ function renderAll() {
   renderSvcStat();
   ['company','doctor','goldenvisa','realestate'].forEach(renderCRM);
   renderContacts();
+  if(typeof renderTax==='function') renderTax();
+  if(typeof applyLang==='function') applyLang();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1712,6 +1795,296 @@ function pollDocuSign() {
     .catch(() => {});
 }
 setInterval(pollDocuSign, 8000);
+
+// ═══════════════════════════════════════════════════════
+// TOAST  (was missing in original file)
+// ═══════════════════════════════════════════════════════
+function toast(msg, type){
+  let el = document.getElementById('toast');
+  if(!el){ el = document.createElement('div'); el.id='toast'; el.className='toast'; document.body.appendChild(el); }
+  el.textContent = msg;
+  el.className = 'toast show ' + (type||'');
+  clearTimeout(window._toastT);
+  window._toastT = setTimeout(()=>{ el.className = 'toast ' + (type||''); }, 2600);
+}
+
+// ═══════════════════════════════════════════════════════
+// i18n  —  KR <-> EN  (full UI + 안내문)
+// ═══════════════════════════════════════════════════════
+const LANG_KEY = 'vip_crm_lang';
+let LANG = localStorage.getItem(LANG_KEY) || 'ko';
+
+// KR phrase -> EN phrase. Matched against the FULL trimmed text of a node / placeholder.
+const I18N = {
+  "⭐ VIP 고객 서비스 대시보드":"⭐ VIP Client Service Dashboard",
+  "총 고객":"Total Clients","활성 계약":"Active","TBD (예정)":"TBD (planned)","총 계약액 (추정)":"Total Value (est.)",
+  "한국어":"KR","언어 선택 / Language":"언어 선택 / Language",
+  "■ 전체 현황":"■ Overview","▤▤ 고객별 상세":"▤▤ Client Detail","▦ 스케줄":"▦ Schedule","✦ 서비스 현황":"✦ Services",
+  "🏢 법인 CRM":"🏢 Company","👨‍⚕️ 의사 CRM":"👨‍⚕️ Doctor","🌟 골든비자 CRM":"🌟 Golden Visa","🏠 부동산 CRM":"🏠 Real Estate",
+  "📑 세금 안내 (Tax)":"📑 Tax","📬 연락처 & 발송":"📬 Contacts & Send","⚙️ 설정":"⚙️ Settings",
+  "고객 서비스 현황":"Client Service Status","클릭하면 상세 이동":"click a row for detail",
+  "+ 고객 추가":"+ Add Client","완료":"Done","진행 중":"In progress","미신청":"Not started","대기":"Waiting","계약예정":"pending contract",
+  "전체 고객 수":"Total Clients","서비스 진행 중":"Services in progress","총 계약 금액 (추정)":"Total Contract Value (est.)","이번 달 완료 예정":"Due this month",
+  "고객사":"Company","대표자":"Rep.","계약일":"Contract","결제계좌":"Account","결제금액":"Amount","서비스 항목 (1~16)":"Services (1-16)","진행률":"Progress","상태":"Status","고객 없음":"No clients","연락처 없음":"No contacts",
+  "👥 고객별 상세":"👥 Client Detail","🔍 고객명, 대표자 검색...":"🔍 Search company / rep...","전체 카테고리":"All categories",
+  "🏢 법인 설립":"🏢 Company Setup","👨‍⚕️ 의사 라이센싱":"👨‍⚕️ Doctor Licensing","🌟 골든비자":"🌟 Golden Visa","🏠 부동산":"🏠 Real Estate",
+  "이번 달 / 지연":"This month / overdue","다음 달 이후 예정":"Upcoming","완료된 항목":"Completed","📅 서비스 스케줄 타임라인":"📅 Service Schedule Timeline",
+  "🔧 16개 서비스 항목별 완료 현황":"🔧 Completion by Service Item (16)","서비스 항목":"Service Item","완료 고객":"Completed","전체 완료율":"Overall %",
+  "🏢 법인 설립 CRM":"🏢 Company Setup CRM","👨‍⚕️ 의사 라이센싱 CRM":"👨‍⚕️ Doctor Licensing CRM","🌟 골든비자 CRM":"🌟 Golden Visa CRM","🏠 부동산 CRM":"🏠 Real Estate CRM",
+  "📑 월간 세금 안내 (Monthly Tax Announcement)":"📑 Monthly Tax Announcement",
+  "✉️ 월간 안내문 일괄 발송":"✉️ Send Monthly Notices",
+  "한국 + UAE 세금 등록 관리 · 신고 D-day · 기장 필요서류 · 월별 안내문 자동 생성 (Invoice + Contract + Email reminder)":"Korea + UAE tax registration / filing D-day / bookkeeping checklist / auto monthly notices (Invoice + Contract + Email reminder)",
+  "⏰ 다가오는 세금 신고 D-day":"⏰ Upcoming Tax Filing D-day","UAE 법인세·VAT / 한국 종소세·법인세 / 월 기장·급여·운영비":"UAE CIT/VAT / Korea income & corporate tax / monthly books, payroll, opex",
+  "구분":"Type","세금 항목":"Tax Item","대상 고객":"Clients","신고 마감일":"Deadline",
+  "🧾 고객별 세금 등록 & 기장 현황":"🧾 Client Tax Registration & Bookkeeping","클릭하여 등록/체크 · 안내문 생성":"toggle to register/check / generate notice",
+  "고객 연락처 관리 · 이메일 / SMS 단체 발송":"Manage contacts / bulk Email & SMS","👥 전체 연락처":"👥 All Contacts","🔍 이름/회사 검색...":"🔍 Search name / company...",
+  "📋 이메일 전체 복사":"📋 Copy all emails","📋 한국번호 전체 복사":"📋 Copy all KR numbers",
+  "한국 번호":"KR Phone","두바이 번호":"Dubai Phone","이메일":"Email","카테고리":"Category","편집":"Edit",
+  "✉️ 이메일 자동 보내기":"✉️ Send Email","수신자 선택":"Select recipients","전체":"All","🏢 법인":"🏢 Company","👨‍⚕️ 의사":"👨‍⚕️ Doctor",
+  "수신자를 위에서 선택하세요":"Select recipients above","제목":"Subject","본문":"Body","✉️ 이메일 클라이언트로 열기":"✉️ Open in email client","📋 주소 복사":"📋 Copy addresses",
+  "📱 SMS 단체 보내기":"📱 Bulk SMS","번호 선택":"Select numbers","한국번호 전체":"All KR","두바이번호 전체":"All Dubai","🏢 법인 KR":"🏢 Company KR","👨‍⚕️ 의사 KR":"👨‍⚕️ Doctor KR",
+  "메시지 (SMS / 카카오)":"Message (SMS / Kakao)","📋 번호+메시지 복사":"📋 Copy numbers+message","📋 번호만 복사":"📋 Copy numbers only",
+  "🔄 데이터 초기화":"🔄 Reset Data","💾 데이터 관리":"💾 Data Management",
+  "📥 데이터 내보내기 (JSON)":"📥 Export data (JSON)","📤 데이터 가져오기":"📤 Import data","🔄 초기 18명 데이터로 리셋":"🔄 Reset to default 18 clients",
+  "📄 DocuSign 계약 자동 등록":"📄 DocuSign Auto-Registration",
+  "고객 추가":"Add Client","취소":"Cancel","저장":"Save","고객사/이름":"Company / Name","결제 금액":"Payment amount","결제 계좌":"Payment account","한국 연락처":"KR contact","두바이 번호":"Dubai number","입국 예정일":"Planned entry date","메모":"Notes",
+  "닫기":"Close","📋 안내문 복사":"📋 Copy notice","✉️ 이메일 앱으로 열기":"✉️ Open in email app","🚀 이메일 자동발송 (서버)":"🚀 Auto-send email (server)",
+  "📑 세금 안내문 (Tax Announcement)":"📑 Tax Announcement"
+};
+
+function setLang(l){ LANG = l; localStorage.setItem(LANG_KEY, l); if(typeof renderAll==='function'){ renderAll(); } else { applyLang(); } }
+
+function applyLang(){
+  document.documentElement.lang = LANG;
+  const ko=document.getElementById('lang-ko'), en=document.getElementById('lang-en');
+  if(ko&&en){ ko.classList.toggle('active', LANG==='ko'); en.classList.toggle('active', LANG==='en'); }
+  const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+  const nodes=[]; while(tw.nextNode()) nodes.push(tw.currentNode);
+  nodes.forEach(n=>{
+    const p=n.parentElement; if(!p) return;
+    const tag=p.tagName; if(tag==='SCRIPT'||tag==='STYLE'||tag==='TEXTAREA') return;
+    if(n.__ko===undefined) n.__ko = n.nodeValue;
+    const key = (n.__ko||'').trim();
+    if(I18N[key]!==undefined){ n.nodeValue = (LANG==='en') ? n.__ko.replace(key, I18N[key]) : n.__ko; }
+  });
+  document.querySelectorAll('[placeholder]').forEach(el=>{
+    if(el.__phko===undefined) el.__phko = el.getAttribute('placeholder')||'';
+    const key=(el.__phko||'').trim();
+    if(I18N[key]!==undefined) el.setAttribute('placeholder', LANG==='en'?I18N[key]:el.__phko);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// TAX ENGINE  —  D-day / 기장 / 안내문
+// ═══════════════════════════════════════════════════════
+const TAX_BOOKKEEPING = [
+  { id:'bank', ko:'은행 거래내역서 (전 계좌)',  en:'Bank statements (all accounts)' },
+  { id:'sales',ko:'매출 인보이스 (Invoice)',     en:'Sales invoices' },
+  { id:'purch',ko:'매입 영수증 · 비용 증빙',      en:'Purchase receipts / expense proof' },
+  { id:'pay',  ko:'급여 명세 (직원 급여)',        en:'Payroll records (staff salaries)' },
+  { id:'cont', ko:'계약서 (Contract)',           en:'Contracts' },
+  { id:'vat',  ko:'VAT 세금계산서',              en:'VAT tax invoices' }
+];
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+function ymd(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+function ddays(target){ const t=new Date(); t.setHours(0,0,0,0); return Math.round((target - t)/86400000); }
+function nextMonthlyDay(day){
+  const now=new Date(); now.setHours(0,0,0,0);
+  let d=new Date(now.getFullYear(), now.getMonth(), day);
+  if(d < now) d=new Date(now.getFullYear(), now.getMonth()+1, day);
+  return d;
+}
+function nextYearlyDate(month, day){
+  const now=new Date(); now.setHours(0,0,0,0);
+  let d=new Date(now.getFullYear(), month-1, day);
+  if(d < now) d=new Date(now.getFullYear()+1, month-1, day);
+  return d;
+}
+function nextVatDeadline(){
+  const now=new Date(); now.setHours(0,0,0,0);
+  const qEnds=[2,5,8,11];
+  for(let yr=now.getFullYear(); yr<=now.getFullYear()+1; yr++){
+    for(const m of qEnds){
+      const end=new Date(yr,m+1,0);
+      const due=new Date(end); due.setDate(due.getDate()+28);
+      if(due>=now) return due;
+    }
+  }
+}
+function getTaxEvents(){
+  const citDue = nextYearlyDate(9,30);
+  return [
+    { type:'UAE',  key:'uae_cit', ko:'UAE 법인세 신고 (Corporate Tax)', en:'UAE Corporate Tax filing',     date:citDue,             scope:'company' },
+    { type:'UAE',  key:'uae_vat', ko:'UAE 부가세 신고 (VAT, 분기)',      en:'UAE VAT return (quarterly)',   date:nextVatDeadline(),  scope:'company' },
+    { type:'KR',   key:'kr_inc',  ko:'한국 종합소득세 신고',             en:'Korea income tax filing',      date:nextYearlyDate(5,31), scope:'all' },
+    { type:'KR',   key:'kr_corp', ko:'한국 법인세 신고',                 en:'Korea corporate tax filing',   date:nextYearlyDate(3,31), scope:'company' },
+    { type:'월간', key:'book',    ko:'월별 기장 자료 제출 마감',         en:'Monthly bookkeeping submission', date:nextMonthlyDay(10), scope:'company' },
+    { type:'월간', key:'payroll', ko:'월 국제 직원 급여 지급',           en:'Monthly intl. staff payroll',  date:nextMonthlyDay(25), scope:'company' },
+    { type:'월간', key:'opex',    ko:'월 운영비 (오피스·라이센스) 납부', en:'Monthly operating costs (office/license)', date:nextMonthlyDay(1), scope:'company' }
+  ].map(e=>({ ...e, dday: ddays(e.date) })).sort((a,b)=>a.date-b.date);
+}
+function ddayBadge(dd){
+  const cls = dd<0?'over':dd<=14?'soon':'far';
+  const txt = dd<0?`+${-dd}일 지남`:dd===0?'D-DAY':`D-${dd}`;
+  const en  = dd<0?`${-dd}d overdue`:dd===0?'D-DAY':`D-${dd}`;
+  return `<span class="dday ${cls}">${LANG==='en'?en:txt}</span>`;
+}
+function taxCat(c){ return c.tax || (c.tax = { kr:false, uae:false, invoice:false, contract:false, book:{} }); }
+function isActiveClient(c){ return c.contractDate && c.contractDate!=='TBD'; }
+
+function renderTax(){
+  const events = getTaxEvents();
+  const stat = document.getElementById('tax-stats');
+  if(stat){
+    const overdue = events.filter(e=>e.dday<0).length;
+    const soon    = events.filter(e=>e.dday>=0 && e.dday<=14).length;
+    const regd    = DB.clients.filter(c=>{ const t=taxCat(c); return t.kr||t.uae; }).length;
+    const needInv = DB.clients.filter(c=>isActiveClient(c) && !taxCat(c).invoice).length;
+    const L=(ko,en)=>LANG==='en'?en:ko;
+    stat.innerHTML =
+      `<div class="tax-sc"><div class="v">${overdue}</div><div class="l">${L('지연된 신고','Overdue filings')}</div></div>
+       <div class="tax-sc warn"><div class="v">${soon}</div><div class="l">${L('2주 내 마감','Due within 2 weeks')}</div></div>
+       <div class="tax-sc ok"><div class="v">${regd}</div><div class="l">${L('세금 등록 고객','Tax-registered clients')}</div></div>
+       <div class="tax-sc info"><div class="v">${needInv}</div><div class="l">${L('Invoice 미발행','Invoice pending')}</div></div>`;
+  }
+  const dt = document.getElementById('tax-dday-tbody');
+  if(dt){
+    const cnt = DB.clients.filter(isActiveClient).length;
+    const compCnt = DB.clients.filter(c=>isActiveClient(c)&&c.category==='company').length;
+    dt.innerHTML = events.map(e=>{
+      const scopeCnt = e.scope==='all'? cnt : compCnt;
+      const tname = LANG==='en'? e.en : e.ko;
+      const typeLbl = e.type==='월간'?(LANG==='en'?'Monthly':'월간'):e.type;
+      return `<tr>
+        <td><span class="badge ${e.type==='UAE'?'b-co':e.type==='KR'?'b-gv':'b-re'}">${typeLbl}</span></td>
+        <td style="font-weight:600">${tname}</td>
+        <td>${scopeCnt}${LANG==='en'?'':'명'}</td>
+        <td>${ymd(e.date)}</td>
+        <td>${ddayBadge(e.dday)}</td>
+      </tr>`;
+    }).join('');
+  }
+  const cont = document.getElementById('tax-container');
+  if(!cont) return;
+  const q=(document.getElementById('tax-q')?.value||'').toLowerCase();
+  const fc=document.getElementById('tax-cat')?.value||'';
+  const list = DB.clients.filter(c=>(!fc||c.category===fc) && (!q||(c.company||'').toLowerCase().includes(q)||(c.rep||'').toLowerCase().includes(q)));
+  cont.innerHTML = list.map(c=>{
+    const t=taxCat(c);
+    const bk = TAX_BOOKKEEPING.map(b=>{
+      const on=!!t.book[b.id];
+      return `<div class="bk-item" onclick="toggleBook(${c.id},'${b.id}')"><span class="chk ${on?'on':'off'}">${on?'✓':''}</span>${LANG==='en'?b.en:b.ko}</div>`;
+    }).join('');
+    const catLbl = LANG==='en'? c.category : (CAT_LBL[c.category]||c.category);
+    return `<div class="cc">
+      <div class="cc-hd">
+        <div>
+          <div class="cc-title">${c.company||''} <span class="badge ${CAT_B[c.category]||'b-wait'}" style="font-size:10px">${CAT_ICO[c.category]||''} ${catLbl}</span></div>
+          <div class="cc-sub">${c.rep||''} · ${c.email||(LANG==='en'?'no email':'이메일 미등록')}</div>
+        </div>
+        <button class="btn bp bsm" onclick="openTaxNotice(${c.id})">📑 ${LANG==='en'?'Generate notice':'안내문 생성'}</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <span class="tax-flag ${t.kr?'on':'off'}" onclick="toggleTax(${c.id},'kr')">🇰🇷 ${LANG==='en'?'Korea tax':'한국세금'} ${t.kr?'✓':''}</span>
+        <span class="tax-flag ${t.uae?'on':'off'}" onclick="toggleTax(${c.id},'uae')">🇦🇪 ${LANG==='en'?'UAE tax':'UAE세금'} ${t.uae?'✓':''}</span>
+        <span class="tax-flag ${t.invoice?'on':'off'}" onclick="toggleTax(${c.id},'invoice')">🧾 Invoice ${t.invoice?'✓':''}</span>
+        <span class="tax-flag ${t.contract?'on':'off'}" onclick="toggleTax(${c.id},'contract')">📝 Contract ${t.contract?'✓':''}</span>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:6px">${LANG==='en'?'Bookkeeping documents required':'기장 필요서류'}</div>
+      <div class="svc-grid">${bk}</div>
+    </div>`;
+  }).join('') || `<div style="color:var(--muted);text-align:center;padding:20px">${LANG==='en'?'No clients':'고객 없음'}</div>`;
+}
+
+function toggleTax(id, field){
+  const c=DB.clients.find(x=>x.id==id); if(!c) return;
+  const t=taxCat(c); t[field]=!t[field]; saveData(DB); renderTax();
+}
+function toggleBook(id, bid){
+  const c=DB.clients.find(x=>x.id==id); if(!c) return;
+  const t=taxCat(c); if(!t.book) t.book={}; t.book[bid]=!t.book[bid]; saveData(DB); renderTax();
+}
+
+function buildTaxNotice(c, lang){
+  const t=taxCat(c);
+  const events=getTaxEvents().filter(e=> e.scope==='all' || c.category==='company');
+  const monthKo=(new Date()).toLocaleDateString('ko-KR',{year:'numeric',month:'long'});
+  const monthEn=(new Date()).toLocaleDateString('en-US',{year:'numeric',month:'long'});
+  const ddTxt=(e)=> e.dday<0?(lang==='en'?`${-e.dday} days overdue`:`${-e.dday}일 경과`):(e.dday===0?'D-DAY':`D-${e.dday}`);
+  if(lang==='en'){
+    let s=`[Tax Announcement] ${monthEn}\n\nDear ${c.rep||c.company},\n\nThis is your monthly Korea & UAE tax reminder from VIP Service.\n\n■ Upcoming filing deadlines\n`;
+    events.forEach(e=> s+=`• ${e.en} — ${ymd(e.date)} (${ddTxt(e)})\n`);
+    s+=`\n■ Bookkeeping documents required this month\n`;
+    TAX_BOOKKEEPING.forEach(b=> s+=`${t.book[b.id]?'[x]':'[ ]'} ${b.en}\n`);
+    s+=`\n■ Registration status\nKorea tax: ${t.kr?'Registered':'NOT registered'} | UAE tax: ${t.uae?'Registered':'NOT registered'}\nInvoice: ${t.invoice?'Issued':'Pending'} | Contract: ${t.contract?'Signed':'Pending'}\n`;
+    s+=`\nPlease send the unchecked documents by the 10th so we can complete your monthly books on time.\nReply to this email if you have any questions.\n\nBest regards,\nVIP Service Team`;
+    return s;
+  }
+  let s=`[세금 안내 / Tax Announcement] ${monthKo}\n\n안녕하세요, ${c.rep||c.company}님.\n\nVIP 서비스 월간 한국·UAE 세금 안내드립니다.\n\n■ 다가오는 신고 마감\n`;
+  events.forEach(e=> s+=`• ${e.ko} — ${ymd(e.date)} (${ddTxt(e)})\n`);
+  s+=`\n■ 이번 달 기장 필요서류\n`;
+  TAX_BOOKKEEPING.forEach(b=> s+=`${t.book[b.id]?'[v]':'[ ]'} ${b.ko}\n`);
+  s+=`\n■ 등록 현황\n한국세금: ${t.kr?'등록완료':'미등록'} | UAE세금: ${t.uae?'등록완료':'미등록'}\nInvoice: ${t.invoice?'발행':'대기'} | Contract: ${t.contract?'서명완료':'대기'}\n`;
+  s+=`\n원활한 월 기장을 위해 체크되지 않은 서류는 매월 10일까지 회신 부탁드립니다.\n문의사항은 본 메일로 회신 주세요.\n\n감사합니다.\nVIP 서비스팀 드림`;
+  return s;
+}
+
+let _taxNoticeClientId=null, _taxNoticeLang='ko';
+function openTaxNotice(id){
+  _taxNoticeClientId=id; _taxNoticeLang=LANG;
+  const c=DB.clients.find(x=>x.id==id); if(!c) return;
+  document.getElementById('tax-modal-client').textContent = (c.company||'')+' · '+(c.email||(LANG==='en'?'no email':'이메일 미등록'));
+  setTaxNoticeLang(LANG);
+  document.getElementById('tax-modal-bg').classList.add('open');
+}
+function setTaxNoticeLang(l){
+  _taxNoticeLang=l;
+  document.getElementById('tax-mlang-ko').classList.toggle('active', l==='ko');
+  document.getElementById('tax-mlang-en').classList.toggle('active', l==='en');
+  const c=DB.clients.find(x=>x.id==_taxNoticeClientId); if(!c) return;
+  document.getElementById('tax-notice-box').textContent = buildTaxNotice(c, l);
+}
+function closeTaxModal(){ document.getElementById('tax-modal-bg').classList.remove('open'); }
+function copyTaxNotice(){
+  const txt=document.getElementById('tax-notice-box').textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast(LANG==='en'?'📋 Notice copied':'📋 안내문 복사됨','ok'));
+}
+function emailTaxNotice(){
+  const c=DB.clients.find(x=>x.id==_taxNoticeClientId); if(!c) return;
+  const subj=encodeURIComponent(_taxNoticeLang==='en'?'[Tax Announcement] Monthly Korea & UAE tax reminder':'[세금 안내] 월간 한국·UAE 세금 안내');
+  const body=encodeURIComponent(buildTaxNotice(c,_taxNoticeLang));
+  window.location.href=`mailto:${c.email||''}?subject=${subj}&body=${body}`;
+}
+function sendTaxNoticeServer(){
+  const c=DB.clients.find(x=>x.id==_taxNoticeClientId); if(!c) return;
+  if(!c.email){ toast(LANG==='en'?'No email registered for this client':'이 고객의 이메일이 없습니다','err'); return; }
+  const payload={ to:c.email, subject:_taxNoticeLang==='en'?'[Tax Announcement] Monthly Korea & UAE tax reminder':'[세금 안내] 월간 한국·UAE 세금 안내', body:buildTaxNotice(c,_taxNoticeLang) };
+  fetch('/api/tax/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(r=>r.json())
+    .then(d=>{ if(d.success) toast(LANG==='en'?'🚀 Email sent':'🚀 이메일 발송 완료','ok'); else toast((LANG==='en'?'Send failed: ':'발송 실패: ')+(d.error||''),'err'); })
+    .catch(()=>toast(LANG==='en'?'Server not running (use 시작.bat)':'서버 미실행 — "이메일 앱으로 열기" 사용','err'));
+}
+function openTaxBlast(){
+  showTab('contacts');
+  setTimeout(()=>{
+    selectEmailRecip('all');
+    const sub=document.getElementById('email-subject');
+    const body=document.getElementById('email-body');
+    if(sub) sub.value = LANG==='en'?'[Tax Announcement] Monthly Korea & UAE tax reminder':'[세금 안내] 월간 한국·UAE 세금 안내';
+    if(body){
+      const sample=DB.clients.find(isActiveClient)||DB.clients[0];
+      body.value = sample? buildTaxNotice(sample, LANG).replace(sample.rep||sample.company, LANG==='en'?'[Client]':'[고객명]') : '';
+    }
+    toast(LANG==='en'?'Prefilled — review & send':'안내문이 채워졌습니다 — 확인 후 발송','ok');
+  },120);
+}
+
+// ═══════════════════════════════════════════════════════
+// BOOT  (was missing — app never rendered on load)
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', ()=>{ renderAll(); applyLang(); });
+if(document.readyState!=='loading'){ try{ renderAll(); applyLang(); }catch(e){} }
 </script>
 </body>
 </html>

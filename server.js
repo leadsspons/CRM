@@ -236,6 +236,7 @@ app.post('/api/settings', (req, res) => {
   data.settings = { ...data.settings, ...req.body };
   saveData(data);
   if (req.body.botToken) initBot(req.body.botToken);
+  if (req.body.smtpUser || req.body.smtpPass || req.body.smtpHost || req.body.smtpPort) initMailer(data.settings);
   res.json({ success: true });
 });
 
@@ -482,6 +483,111 @@ app.get('/api/docusign-new', (req, res) => {
 // ─────────────────────────────────────────────
 // START
 // ─────────────────────────────────────────────
+
+// ─────────────────────────────────────────────
+// EMAIL (nodemailer) + TAX ANNOUNCEMENT
+// ─────────────────────────────────────────────
+let nodemailer = null;
+try { nodemailer = require('nodemailer'); } catch (e) {
+  console.log('ℹ️  nodemailer 미설치 — 이메일 자동발송을 쓰려면 `npm install nodemailer` 실행');
+}
+let mailer = null;
+
+function initMailer(settings) {
+  if (!nodemailer) return;
+  const s = settings || loadData().settings || {};
+  if (!s.smtpUser || !s.smtpPass) { mailer = null; return; }
+  try {
+    mailer = nodemailer.createTransport({
+      host: s.smtpHost || 'smtp.gmail.com',
+      port: Number(s.smtpPort) || 465,
+      secure: (Number(s.smtpPort) || 465) === 465,
+      auth: { user: s.smtpUser, pass: s.smtpPass }
+    });
+    console.log('✅ 이메일(SMTP) 초기화 완료:', s.smtpUser);
+  } catch (e) { console.error('Mailer init error:', e.message); mailer = null; }
+}
+
+// Tax schedule helpers (server side, mirrors the dashboard)
+function _pad2(n){ return String(n).padStart(2,'0'); }
+function _ymd(d){ return `${d.getFullYear()}-${_pad2(d.getMonth()+1)}-${_pad2(d.getDate())}`; }
+function _ddays(t){ const x=new Date(); x.setHours(0,0,0,0); return Math.round((t-x)/86400000); }
+function _nextMonthlyDay(day){ const n=new Date(); n.setHours(0,0,0,0); let d=new Date(n.getFullYear(),n.getMonth(),day); if(d<n)d=new Date(n.getFullYear(),n.getMonth()+1,day); return d; }
+function _nextYearly(m,day){ const n=new Date(); n.setHours(0,0,0,0); let d=new Date(n.getFullYear(),m-1,day); if(d<n)d=new Date(n.getFullYear()+1,m-1,day); return d; }
+function _nextVat(){ const n=new Date(); n.setHours(0,0,0,0); const q=[2,5,8,11]; for(let y=n.getFullYear();y<=n.getFullYear()+1;y++){ for(const m of q){ const e=new Date(y,m+1,0); const due=new Date(e); due.setDate(due.getDate()+28); if(due>=n) return due; } } }
+
+function getTaxEvents() {
+  return [
+    { type:'UAE',  ko:'UAE 법인세 신고 (Corporate Tax)', en:'UAE Corporate Tax filing',   date:_nextYearly(9,30), scope:'company' },
+    { type:'UAE',  ko:'UAE 부가세 신고 (VAT, 분기)',      en:'UAE VAT return (quarterly)', date:_nextVat(),        scope:'company' },
+    { type:'KR',   ko:'한국 종합소득세 신고',             en:'Korea income tax filing',    date:_nextYearly(5,31), scope:'all' },
+    { type:'KR',   ko:'한국 법인세 신고',                 en:'Korea corporate tax filing', date:_nextYearly(3,31), scope:'company' },
+    { type:'월간', ko:'월별 기장 자료 제출 마감',         en:'Monthly bookkeeping submission', date:_nextMonthlyDay(10), scope:'company' },
+    { type:'월간', ko:'월 국제 직원 급여 지급',           en:'Monthly intl. staff payroll', date:_nextMonthlyDay(25), scope:'company' },
+    { type:'월간', ko:'월 운영비 (오피스·라이센스) 납부', en:'Monthly operating costs (office/license)', date:_nextMonthlyDay(1), scope:'company' }
+  ].map(e=>({ ...e, date:_ymd(e.date), dday:_ddays(new Date(e.date)) })).sort((a,b)=> new Date(a.date)-new Date(b.date));
+}
+
+const TAX_BOOKKEEPING = [
+  { ko:'은행 거래내역서 (전 계좌)', en:'Bank statements (all accounts)' },
+  { ko:'매출 인보이스 (Invoice)',    en:'Sales invoices' },
+  { ko:'매입 영수증 · 비용 증빙',     en:'Purchase receipts / expense proof' },
+  { ko:'급여 명세 (직원 급여)',       en:'Payroll records (staff salaries)' },
+  { ko:'계약서 (Contract)',          en:'Contracts' },
+  { ko:'VAT 세금계산서',             en:'VAT tax invoices' }
+];
+
+function buildTaxNotice(client, lang) {
+  const c = client || {};
+  const evs = getTaxEvents().filter(e => e.scope==='all' || c.category==='company');
+  const dd = e => e.dday<0 ? (lang==='en'?`${-e.dday} days overdue`:`${-e.dday}일 경과`) : (e.dday===0?'D-DAY':`D-${e.dday}`);
+  if (lang === 'en') {
+    let s=`[Tax Announcement] ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long'})}\n\nDear ${c.rep||c.company||'Client'},\n\nThis is your monthly Korea & UAE tax reminder from VIP Service.\n\n■ Upcoming filing deadlines\n`;
+    evs.forEach(e=> s+=`• ${e.en} — ${e.date} (${dd(e)})\n`);
+    s+=`\n■ Bookkeeping documents required this month\n`;
+    TAX_BOOKKEEPING.forEach(b=> s+=`[ ] ${b.en}\n`);
+    s+=`\nPlease send the documents by the 10th so we can complete your monthly books on time.\n\nBest regards,\nVIP Service Team`;
+    return s;
+  }
+  let s=`[세금 안내 / Tax Announcement] ${new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long'})}\n\n안녕하세요, ${c.rep||c.company||'고객'}님.\n\nVIP 서비스 월간 한국·UAE 세금 안내드립니다.\n\n■ 다가오는 신고 마감\n`;
+  evs.forEach(e=> s+=`• ${e.ko} — ${e.date} (${dd(e)})\n`);
+  s+=`\n■ 이번 달 기장 필요서류\n`;
+  TAX_BOOKKEEPING.forEach(b=> s+=`[ ] ${b.ko}\n`);
+  s+=`\n원활한 월 기장을 위해 서류는 매월 10일까지 회신 부탁드립니다.\n\n감사합니다.\nVIP 서비스팀 드림`;
+  return s;
+}
+
+// GET tax schedule (D-day list)
+app.get('/api/tax/events', (req, res) => res.json({ events: getTaxEvents(), bookkeeping: TAX_BOOKKEEPING }));
+
+// POST send one tax email  { to, subject, body }
+app.post('/api/tax/send', (req, res) => {
+  const { to, subject, body } = req.body || {};
+  if (!to) return res.status(400).json({ error: '수신자(to) 이메일이 없습니다.' });
+  if (!mailer) { initMailer(); if (!mailer) return res.status(400).json({ error: 'SMTP 미설정. Settings에서 Gmail 주소/앱 비밀번호를 저장하세요.' }); }
+  const from = (loadData().settings || {}).smtpFrom || (loadData().settings || {}).smtpUser;
+  mailer.sendMail({ from, to, subject: subject || '[Tax Announcement]', text: body || '' })
+    .then(() => res.json({ success: true }))
+    .catch(e => res.status(500).json({ error: e.message }));
+});
+
+// POST blast to all clients with email  { lang }
+app.post('/api/tax/blast', async (req, res) => {
+  if (!mailer) { initMailer(); if (!mailer) return res.status(400).json({ error: 'SMTP 미설정.' }); }
+  const lang = (req.body && req.body.lang) || 'ko';
+  const data = loadData();
+  const settings = data.settings || {};
+  const from = settings.smtpFrom || settings.smtpUser;
+  const subject = lang==='en' ? '[Tax Announcement] Monthly Korea & UAE tax reminder' : '[세금 안내] 월간 한국·UAE 세금 안내';
+  const targets = data.clients.filter(c => c.email);
+  let sent = 0, failed = 0;
+  for (const c of targets) {
+    try { await mailer.sendMail({ from, to: c.email, subject, text: buildTaxNotice(c, lang) }); sent++; }
+    catch (e) { failed++; console.error('Tax mail fail:', c.email, e.message); }
+  }
+  res.json({ success: true, sent, failed, total: targets.length });
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`\n🚀 VIP CRM Dashboard: http://localhost:${PORT}`);
@@ -492,4 +598,5 @@ app.listen(PORT, () => {
   } else {
     console.log('⚠️  Telegram 봇 미설정. 브라우저에서 Settings 탭 열고 Bot Token 입력 필요.');
   }
+  initMailer(d.settings);
 });
