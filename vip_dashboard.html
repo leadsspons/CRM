@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VIP 고객 서비스 대시보드</title>
+<style>
+  :root {
+    --gold: #b8972a;
+    --gold-light: #f0d97a;
+    --dark: #1a1a2e;
+    --darker: #12121f;
+    --card: #22223a;
+    --card2: #2a2a45;
+    --text: #e8e8f0;
+    --muted: #9999bb;
+    --green: #4caf82;
+    --red: #e05c5c;
+    --blue: #5c9ee0;
+    --orange: #e09a5c;
+    --purple: #9c6ee0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+    background: var(--darker);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, var(--dark) 0%, #1e1e35 100%);
+    border-bottom: 2px solid var(--gold);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header h1 { font-size: 22px; color: var(--gold-light); letter-spacing: 1px; }
+  .header p { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .header-stats { display: flex; gap: 24px; }
+  .hstat { text-align: center; }
+  .hstat .val { font-size: 26px; font-weight: 700; color: var(--gold-light); }
+  .hstat .lbl { font-size: 11px; color: var(--muted); }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0; background: var(--dark); padding: 0 32px; border-bottom: 1px solid #333; }
+  .tab {
+    padding: 12px 24px; cursor: pointer; font-size: 13px; color: var(--muted);
+    border-bottom: 3px solid transparent; transition: all 0.2s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--gold-light); border-bottom-color: var(--gold); font-weight: 600; }
+
+  /* MAIN */
+  .main { padding: 24px 32px; }
+
+  /* PAGE */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* SUMMARY CARDS */
+  .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .scard {
+    background: var(--card); border-radius: 10px; padding: 18px 20px;
+    border-left: 4px solid var(--gold);
+  }
+  .scard.green { border-left-color: var(--green); }
+  .scard.blue { border-left-color: var(--blue); }
+  .scard.orange { border-left-color: var(--orange); }
+  .scard .val { font-size: 30px; font-weight: 700; margin-bottom: 4px; }
+  .scard.green .val { color: var(--green); }
+  .scard.blue .val { color: var(--blue); }
+  .scard.orange .val { color: var(--orange); }
+  .scard.gold .val { color: var(--gold-light); }
+  .scard .lbl { font-size: 12px; color: var(--muted); }
+
+  /* TABLE */
+  .section-title {
+    font-size: 14px; font-weight: 700; color: var(--gold-light);
+    margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #333;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--card); color: var(--muted);
+    padding: 10px 12px; text-align: left; font-weight: 600;
+    border-bottom: 2px solid #333; white-space: nowrap;
+  }
+  td { padding: 10px 12px; border-bottom: 1px solid #2a2a3a; vertical-align: middle; }
+  tr:hover td { background: rgba(184,151,42,0.05); }
+
+  /* BADGE */
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 12px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .badge-done { background: rgba(76,175,130,0.2); color: var(--green); }
+  .badge-pending { background: rgba(224,154,92,0.2); color: var(--orange); }
+  .badge-none { background: rgba(153,153,187,0.15); color: var(--muted); }
+  .badge-tbd { background: rgba(156,110,224,0.2); color: var(--purple); }
+
+  /* SERVICE DOTS */
+  .dots { display: flex; flex-wrap: wrap; gap: 4px; }
+  .dot {
+    width: 22px; height: 22px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; cursor: pointer;
+    transition: transform 0.15s;
+    position: relative;
+  }
+  .dot:hover { transform: scale(1.2); }
+  .dot.done { background: var(--green); color: #fff; }
+  .dot.pending { background: var(--orange); color: #fff; }
+  .dot.none { background: #333; color: var(--muted); }
+
+  /* TOOLTIP */
+  .dot:hover::after {
+    content: attr(data-tip);
+    position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+    background: #111; color: #fff; padding: 4px 8px; border-radius: 4px;
+    font-size: 10px; white-space: nowrap; z-index: 100;
+    pointer-events: none;
+  }
+
+  /* CLIENT DETAIL */
+  .client-detail {
+    background: var(--card); border-radius: 10px; padding: 20px;
+    margin-bottom: 20px; border: 1px solid #333;
+    display: none;
+  }
+  .client-detail.open { display: block; }
+  .detail-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .detail-title { font-size: 16px; font-weight: 700; color: var(--gold-light); }
+  .detail-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .detail-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  .detail-item label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .detail-item span { font-size: 13px; font-weight: 600; }
+  .service-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .srv-item {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+    background: var(--card2); border-radius: 6px; font-size: 12px;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .srv-item:hover { background: #333355; }
+  .srv-check {
+    width: 16px; height: 16px; border-radius: 3px; display: flex;
+    align-items: center; justify-content: center; font-size: 9px; flex-shrink: 0;
+  }
+  .srv-check.done { background: var(--green); color: #fff; }
+  .srv-check.pending { background: var(--orange); color: #fff; }
+  .srv-check.none { background: #444; color: #666; }
+
+  /* SCHEDULE */
+  .schedule-list { display: flex; flex-direction: column; gap: 10px; }
+  .sch-item {
+    display: flex; gap: 16px; align-items: flex-start;
+    background: var(--card); border-radius: 8px; padding: 12px 16px;
+    border-left: 3px solid var(--blue);
+  }
+  .sch-item.urgent { border-left-color: var(--red); }
+  .sch-item.done { border-left-color: var(--green); opacity: 0.7; }
+  .sch-date { font-size: 12px; font-weight: 700; color: var(--blue); min-width: 70px; }
+  .sch-item.urgent .sch-date { color: var(--red); }
+  .sch-item.done .sch-date { color: var(--green); }
+  .sch-title { font-size: 13px; font-weight: 600; }
+  .sch-client { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* FILTER */
+  .filter-bar {
+    display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-bar input, .filter-bar select {
+    background: var(--card); border: 1px solid #444; border-radius: 6px;
+    color: var(--text); padding: 7px 12px; font-size: 12px;
+    outline: none;
+  }
+  .filter-bar input:focus, .filter-bar select:focus { border-color: var(--gold); }
+  .filter-bar input { width: 220px; }
+
+  /* PROGRESS BAR */
+  .prog-bar { background: #333; border-radius: 4px; height: 6px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 4px; background: var(--green); transition: width 0.3s; }
+  .prog-pct { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* PAYMENT TAG */
+  .pay-tag {
+    font-size: 11px; color: var(--blue); background: rgba(92,158,224,0.15);
+    padding: 2px 7px; border-radius: 10px;
+  }
+
+  /* CLOSE BTN */
+  .close-btn {
+    background: none; border: 1px solid #444; color: var(--muted);
+    padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;
+  }
+  .close-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+
+  .row-clickable { cursor: pointer; }
+
+  /* LEGEND */
+  .legend { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+
+  /* NOTE */
+  .note { font-size: 11px; color: var(--muted); font-style: italic; padding: 4px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>⭐ VIP 고객 서비스 대시보드</h1>
+    <p>Tax Announcement · UAE 법인설립 · 비자 서비스 관리</p>
+  </div>
+  <div class="header-stats">
+    <div class="hstat"><div class="val" id="h-total">18</div><div class="lbl">총 고객</div></div>
+    <div class="hstat"><div class="val" id="h-active">15</div><div class="lbl">활성 계약</div></div>
+    <div class="hstat"><div class="val" id="h-tbd">3</div><div class="lbl">TBD (예정)</div></div>
+    <div class="hstat"><div class="val" id="h-revenue">$289K</div><div class="lbl">총 계약액 (추정)</div></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showPage('overview')">📊 전체 현황</div>
+  <div class="tab" onclick="showPage('clients')">👥 고객별 상세</div>
+  <div class="tab" onclick="showPage('schedule')">📅 스케줄</div>
+  <div class="tab" onclick="showPage('services')">🔧 서비스 현황</div>
+</div>
+
+<div class="main">
+
+<!-- ===== PAGE: OVERVIEW ===== -->
+<div id="page-overview" class="page active">
+  <div class="summary-row">
+    <div class="scard gold">
+      <div class="val">18</div>
+      <div class="lbl">전체 고객 수</div>
+    </div>
+    <div class="scard green">
+      <div class="val">12</div>
+      <div class="lbl">서비스 진행 중</div>
+    </div>
+    <div class="scard blue">
+      <div class="val">$289K</div>
+      <div class="lbl">총 계약 금액 (추정)</div>
+    </div>
+    <div class="scard orange">
+      <div class="val">5</div>
+      <div class="lbl">이번 달 완료 예정</div>
+    </div>
+  </div>
+
+  <div class="section-title">📋 고객 서비스 현황 (클릭하면 상세 보기)</div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> 완료</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> 진행 중</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#333"></div> 미신청</div>
+  </div>
+  <div class="note">서비스 번호: 1=Freezone 2=비자 3=메디컬 4=바이오 5=EID 6=가상사무실 7=월별기장 8=개인은행 9=법인은행 10=핸드폰 11=법인인증 12=KYC 13=사업자등록증 14=법인등기 15=번역 16=레터헤드</div>
+  <br>
+  <div class="table-wrap">
+    <table id="overview-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>고객사</th>
+          <th>대표자</th>
+          <th>계약일</th>
+          <th>결제계좌</th>
+          <th>결제금액</th>
+          <th>서비스 항목 (1~16)</th>
+          <th>진행률</th>
+          <th>상태</th>
+        </tr>
+      </thead>
+      <tbody id="overview-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===== PAGE: CLIENTS ===== -->
+<div id="page-clients" class="page">
+  <div class="filter-bar">
+    <input type="text" id="client-search" placeholder="🔍 고객명, 대표자 검색..." oninput="filterClients()">
+    <select id="client-filter" onchange="filterClients()">
+      <option value="">전체 상태</option>
+      <option value="active">활성</option>
+      <option value="tbd">TBD</option>
+    </select>
+  </div>
+  <div id="client-list"></div>
+</div>
+
+<!-- ===== PAGE: SCHEDULE ===== -->
+<div id="page-schedule" class="page">
+  <div class="summary-row" style="grid-template-columns: repeat(3,1fr);">
+    <div class="scard orange">
+      <div class="val">3</div>
+      <div class="lbl">이번 달 예정</div>
+    </div>
+    <div class="scard blue">
+      <div class="val">5</div>
+      <div class="lbl">다음 달 예정</div>
+    </div>
+    <div class="scard green">
+      <div class="val">8</div>
+      <div class="lbl">완료된 항목</div>
+    </div>
+  </div>
+  <div class="section-title">📅 서비스 스케줄 타임라인</div>
+  <div class="schedule-list" id="schedule-list"></div>
+</div>
+
+<!-- ===== PAGE: SERVICES ===== -->
+<div id="page-services" class="page">
+  <div class="section-title">🔧 16개 서비스 항목별 완료 현황</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>No.</th>
+          <th>서비스 항목</th>
+          <th>완료 고객</th>
+          <th>진행 중</th>
+          <th>미신청</th>
+          <th>전체 완료율</th>
+        </tr>
+      </thead>
+      <tbody id="service-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ===== DATA =====
+
+const SERVICES = [
+  "Freezone Dubai 설립 (라이센스)",
+  "비자발급 ($3,650/1명당)",
+  "메디컬 테스트",
+  "바이오메트릭스 등록",
+  "Emirate ID Card 등록 신청",
+  "가상 사무실 렌트비",
+  "월별 기장 서비스",
+  "개인 은행 계좌개설",
+  "법인 은행 계좌개설",
+  "현지 핸드폰 번호개설 가이드",
+  "법인인증, 사업자등록증서, Memorandum",
+  "대표자 인증 KYC",
+  "사업자등록증 발급",
+  "법인등기 수수료 납부 가이드",
+  "전체 등기 문서 번역 제출",
+  "법률문서 (Letter Head) Template 제작"
+];
+
+const CLIENTS = [
+  {
+    id: 1, company: "NIA Cloud", rep: "윤정훈 대표", date: "2025.04", status: "active",
+    account: "KB국민은행 · 홍길동", payment: "$8,500",
+    services: [1,1,1,1,1,1,0,1,1,0,1,1,1,0,1,1],
+    notes: "Freezone 완료, 월기장 진행 중"
+  },
+  {
+    id: 2, company: "A Code LLC", rep: "이원형 대표", date: "2025.06", status: "active",
+    account: "신한은행 · 홍길동", payment: "$9,200",
+    services: [1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1],
+    notes: "개인은행 계좌 개설 진행 예정"
+  },
+  {
+    id: 3, company: "Veltrana LLC", rep: "송재표 대표 (연장)", date: "2025.07", status: "active",
+    account: "우리은행 · 홍길동", payment: "$11,000",
+    services: [1,2,2,2,2,1,1,2,2,0,1,1,1,1,2,1],
+    notes: "비자 연장 중, EID 재신청"
+  },
+  {
+    id: 4, company: "DooriArk", rep: "두리아크 대표", date: "2025.08", status: "active",
+    account: "KB국민은행 · 홍길동", payment: "$7,800",
+    services: [1,1,1,1,1,0,1,1,0,0,1,1,1,0,1,0],
+    notes: "법인 은행 개설 대기"
+  },
+  {
+    id: 5, company: "JI Capital", rep: "전진호 대표", date: "2025.10", status: "active",
+    account: "하나은행 · 홍길동", payment: "$8,200",
+    services: [1,1,1,1,1,1,1,2,2,1,1,1,1,1,0,1],
+    notes: "은행 계좌 심사 중"
+  },
+  {
+    id: 6, company: "JH Investment", rep: "임진택 대표", date: "2025.12", status: "active",
+    account: "신한은행 · 홍길동", payment: "$9,500",
+    services: [1,1,0,0,2,1,1,0,2,0,1,1,1,1,2,1],
+    notes: "메디컬·바이오 미진행, EID 신청 중"
+  },
+  {
+    id: 7, company: "Yubit LLC", rep: "진현석 대표 (야마다 회장님)", date: "2025.12", status: "active",
+    account: "KB국민은행 · 홍길동", payment: "$15,000",
+    services: [1,2,2,2,2,1,1,2,2,1,1,1,1,1,1,1],
+    notes: "비자 복수 신청 중"
+  },
+  {
+    id: 8, company: "Rainbow Pintos", rep: "김대표", date: "2026.01", status: "active",
+    account: "우리은행 · 홍길동", payment: "$8,000",
+    services: [1,1,1,1,1,0,1,2,2,0,1,1,1,0,0,0],
+    notes: "은행 계좌 진행 중"
+  },
+  {
+    id: 9, company: "Trinitas", rep: "김충범 대표", date: "2026.01", status: "active",
+    account: "하나은행 · 홍길동", payment: "$8,500",
+    services: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    notes: "전 서비스 완료"
+  },
+  {
+    id: 10, company: "행복발전소", rep: "대표님", date: "2026.02", status: "active",
+    account: "신한은행 · 홍길동", payment: "$7,500",
+    services: [1,2,2,2,2,0,1,0,2,0,1,1,1,0,0,0],
+    notes: "비자 및 관련 서류 진행 중"
+  },
+  {
+    id: 11, company: "부동산 (2026.02)", rep: "부동산대표님", date: "2026.02", status: "active",
+    account: "KB국민은행 · 홍길동", payment: "$9,000",
+    services: [1,1,1,1,1,1,1,2,2,0,1,1,1,1,2,1],
+    notes: "은행 계좌 심사 중"
+  },
+  {
+    id: 12, company: "IMC Insight Management LLC", rep: "박현종 대표", date: "2026.03", status: "active",
+    account: "우리은행 · 홍길동", payment: "$12,000",
+    services: [1,2,2,2,2,1,1,0,2,1,1,1,1,1,2,1],
+    notes: "비자 진행 중"
+  },
+  {
+    id: 13, company: "Tallex", rep: "하상윤 대표", date: "2026.04", status: "active",
+    account: "하나은행 · 홍길동", payment: "$8,800",
+    services: [1,1,1,1,1,0,0,0,2,0,1,1,1,0,0,0],
+    notes: "초기 설립 단계"
+  },
+  {
+    id: 14, company: "JST Holdings", rep: "이종윤 대표", date: "2026.03", status: "active",
+    account: "신한은행 · 홍길동", payment: "$9,200",
+    services: [1,1,1,1,1,1,1,2,2,1,1,1,1,1,1,1],
+    notes: "은행 계좌 개설 심사 중"
+  },
+  {
+    id: 15, company: "Dr.License courses", rep: "홀진우 원장님", date: "2026.03", status: "active",
+    account: "KB국민은행 · 홍길동", payment: "$7,200",
+    phone: "010-2441-2591",
+    services: [1,1,0,0,2,0,1,0,2,0,1,1,1,0,0,1],
+    notes: "개인·법인 은행 개설 대기"
+  },
+  {
+    id: 16, company: "박문수 (TBD)", rep: "박문수 원장님", date: "TBD", status: "tbd",
+    account: "-", payment: "-",
+    phone: "010-9099-0808",
+    services: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    notes: "계약 예정"
+  },
+  {
+    id: 17, company: "이상현 (TBD)", rep: "이상현 대표 (대기)", date: "TBD", status: "tbd",
+    account: "-", payment: "-",
+    phone: "010-3133-3503",
+    services: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    notes: "대기 중"
+  },
+  {
+    id: 18, company: "이정한 (TBD)", rep: "이정한 대표님", date: "TBD", status: "tbd",
+    account: "-", payment: "-",
+    phone: "010-7366-4701",
+    services: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    notes: "계약 예정"
+  }
+];
+
+const SCHEDULE = [
+  { date: "2026.06", title: "IMC Insight — 비자 발급 완료 예정", client: "박현종 대표", type: "pending" },
+  { date: "2026.06", title: "행복발전소 — 바이오메트릭스 등록", client: "대표님", type: "pending" },
+  { date: "2026.06", title: "JST Holdings — 법인 은행 계좌 개설 완료 예정", client: "이종윤 대표", type: "pending" },
+  { date: "2026.07", title: "Veltrana LLC — 비자 연장 완료 예정", client: "송재표 대표", type: "upcoming" },
+  { date: "2026.07", title: "Tallex — 월별 기장 서비스 시작", client: "하상윤 대표", type: "upcoming" },
+  { date: "2026.07", title: "Dr.License — 법인 은행 계좌 개설 예정", client: "홀진우 원장", type: "upcoming" },
+  { date: "2026.07", title: "JH Investment — EID Card 발급 완료 예정", client: "임진택 대표", type: "upcoming" },
+  { date: "2026.07", title: "행복발전소 — 법인 은행 개설 예정", client: "대표님", type: "upcoming" },
+  { date: "2026.08", title: "박문수 원장님 — 계약 확정 예정 (TBD)", client: "010-9099-0808", type: "tbd" },
+  { date: "2026.08", title: "이상현 대표 — 계약 확정 예정 (TBD)", client: "010-3133-3503", type: "tbd" },
+  { date: "2026.09", title: "이정한 대표 — 계약 확정 예정 (TBD)", client: "010-7366-4701", type: "tbd" },
+  { date: "완료", title: "Trinitas — 전체 서비스 완료", client: "김충범 대표", type: "done" },
+  { date: "완료", title: "NIA Cloud — Freezone 설립 완료", client: "윤정훈 대표", type: "done" },
+];
+
+// ===== RENDER OVERVIEW =====
+function renderOverview() {
+  const tbody = document.getElementById('overview-tbody');
+  tbody.innerHTML = '';
+  CLIENTS.forEach(c => {
+    const done = c.services.filter(s => s === 1).length;
+    const inprog = c.services.filter(s => s === 2).length;
+    const total = SERVICES.length;
+    const pct = Math.round((done / total) * 100);
+
+    const dots = c.services.map((s, i) => {
+      const cls = s === 1 ? 'done' : s === 2 ? 'pending' : 'none';
+      const sym = s === 1 ? '✓' : s === 2 ? '…' : (i+1);
+      return `<div class="dot ${cls}" data-tip="${i+1}. ${SERVICES[i].substring(0,15)}">${sym}</div>`;
+    }).join('');
+
+    const statusBadge = c.status === 'tbd'
+      ? '<span class="badge badge-tbd">TBD</span>'
+      : done === total ? '<span class="badge badge-done">완료</span>'
+      : inprog > 0 ? '<span class="badge badge-pending">진행 중</span>'
+      : '<span class="badge badge-none">대기</span>';
+
+    const tr = document.createElement('tr');
+    tr.className = 'row-clickable';
+    tr.onclick = () => { showPage('clients'); setTimeout(() => openClient(c.id), 100); };
+    tr.innerHTML = `
+      <td>${c.id}</td>
+      <td><strong>${c.company}</strong></td>
+      <td>${c.rep}</td>
+      <td>${c.date}</td>
+      <td><span class="pay-tag">${c.account}</span></td>
+      <td>${c.payment}</td>
+      <td><div class="dots">${dots}</div></td>
+      <td>
+        <div class="prog-bar"><div class="prog-fill" style="width:${c.status==='tbd'?0:pct}%"></div></div>
+        <div class="prog-pct">${c.status==='tbd'?'계약예정':pct+'% ('+done+'/'+total+')'}</div>
+      </td>
+      <td>${statusBadge}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ===== RENDER CLIENTS =====
+function renderClientList(filter = '') {
+  const container = document.getElementById('client-list');
+  const statusFilter = document.getElementById('client-filter')?.value || '';
+  container.innerHTML = '';
+
+  CLIENTS.filter(c => {
+    const matchText = !filter || c.company.includes(filter) || c.rep.includes(filter);
+    const matchStatus = !statusFilter || c.status === statusFilter;
+    return matchText && matchStatus;
+  }).forEach(c => {
+    const done = c.services.filter(s => s === 1).length;
+    const total = SERVICES.length;
+    const pct = Math.round((done / total) * 100);
+
+    const srvGrid = c.services.map((s, i) => {
+      const cls = s === 1 ? 'done' : s === 2 ? 'pending' : 'none';
+      const sym = s === 1 ? '✓' : s === 2 ? '⋯' : '—';
+      return `
+        <div class="srv-item" onclick="toggleService(${c.id},${i})">
+          <div class="srv-check ${cls}">${sym}</div>
+          <span>${i+1}. ${SERVICES[i]}</span>
+        </div>
+      `;
+    }).join('');
+
+    const el = document.createElement('div');
+    el.className = 'client-detail open';
+    el.id = `client-${c.id}`;
+    el.innerHTML = `
+      <div class="detail-header">
+        <div>
+          <div class="detail-title">⭐ ${c.company}</div>
+          <div class="detail-sub">${c.rep} · 계약일: ${c.date}${c.phone ? ' · ☎ '+c.phone : ''}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div style="text-align:right">
+            <div style="font-size:18px;font-weight:700;color:var(--gold-light)">${c.status==='tbd'?'계약예정':pct+'%'}</div>
+            <div style="font-size:11px;color:var(--muted)">완료율 (${done}/${total})</div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>결제 계좌</label>
+          <span><span class="pay-tag">${c.account}</span></span>
+        </div>
+        <div class="detail-item">
+          <label>결제 금액</label>
+          <span style="color:var(--gold-light)">${c.payment}</span>
+        </div>
+        <div class="detail-item">
+          <label>메모</label>
+          <span style="color:var(--muted);font-size:12px">${c.notes}</span>
+        </div>
+      </div>
+      <div class="section-title" style="margin-bottom:8px">서비스 항목 (클릭하여 상태 변경)</div>
+      <div class="service-grid">${srvGrid}</div>
+    `;
+    container.appendChild(el);
+  });
+}
+
+function filterClients() {
+  const q = document.getElementById('client-search').value;
+  renderClientList(q);
+}
+
+function openClient(id) {
+  document.querySelectorAll('.client-detail').forEach(el => el.scrollIntoView && null);
+  const el = document.getElementById(`client-${id}`);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function toggleService(clientId, srvIdx) {
+  const c = CLIENTS.find(x => x.id === clientId);
+  if (!c) return;
+  c.services[srvIdx] = (c.services[srvIdx] + 1) % 3; // 0→1→2→0
+  renderClientList(document.getElementById('client-search')?.value || '');
+  renderOverview();
+  renderServices();
+}
+
+// ===== RENDER SCHEDULE =====
+function renderSchedule() {
+  const list = document.getElementById('schedule-list');
+  list.innerHTML = '';
+  SCHEDULE.forEach(s => {
+    const cls = s.type === 'done' ? 'done' : s.type === 'pending' ? 'urgent' : '';
+    list.innerHTML += `
+      <div class="sch-item ${cls}">
+        <div class="sch-date">${s.date}</div>
+        <div>
+          <div class="sch-title">${s.title}</div>
+          <div class="sch-client">${s.client}</div>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// ===== RENDER SERVICES =====
+function renderServices() {
+  const tbody = document.getElementById('service-tbody');
+  tbody.innerHTML = '';
+  SERVICES.forEach((srv, i) => {
+    const done = CLIENTS.filter(c => c.services[i] === 1).length;
+    const inprog = CLIENTS.filter(c => c.services[i] === 2).length;
+    const none = CLIENTS.filter(c => c.services[i] === 0).length;
+    const activeClients = CLIENTS.filter(c => c.status === 'active').length;
+    const pct = Math.round((done / activeClients) * 100);
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${srv}</td>
+        <td><span style="color:var(--green);font-weight:700">${done}명</span></td>
+        <td><span style="color:var(--orange);font-weight:700">${inprog}명</span></td>
+        <td><span style="color:var(--muted)">${none}명</span></td>
+        <td>
+          <div class="prog-bar" style="width:120px">
+            <div class="prog-fill" style="width:${pct}%"></div>
+          </div>
+          <div class="prog-pct">${pct}%</div>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+// ===== TABS =====
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const tabs = ['overview','clients','schedule','services'];
+  document.querySelectorAll('.tab')[tabs.indexOf(name)].classList.add('active');
+}
+
+// ===== INIT =====
+renderOverview();
+renderClientList();
+renderSchedule();
+renderServices();
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "vip-crm-dashboard",
+  "version": "2.0.0",
+  "description": "VIP 고객 서비스 CRM + Telegram Bot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "install-deps": "npm install"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-telegram-bot-api": "^0.64.0"
+  }
+}

@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VIP 고객 서비스 대시보드 (오프라인)</title>
+<style>
+:root{
+  --gold:#b8972a;--gold2:#f0d97a;--dark:#1a1a2e;--darker:#12121f;
+  --card:#22223a;--card2:#2a2a45;--text:#e8e8f0;--muted:#9999bb;
+  --green:#4caf82;--red:#e05c5c;--blue:#5c9ee0;--orange:#e09a5c;--purple:#9c6ee0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI','Malgun Gothic',sans-serif;background:var(--darker);color:var(--text);min-height:100vh}
+.hdr{background:linear-gradient(135deg,var(--dark),#1e1e35);border-bottom:2px solid var(--gold);padding:16px 28px;display:flex;align-items:center;justify-content:space-between}
+.hdr-left h1{font-size:20px;color:var(--gold2);letter-spacing:.5px}
+.hdr-left p{font-size:11px;color:var(--muted);margin-top:3px}
+.hdr-stats{display:flex;gap:28px}
+.hs{text-align:center}
+.hs .v{font-size:26px;font-weight:700;color:var(--gold2)}
+.hs .l{font-size:10px;color:var(--muted);margin-top:1px}
+.tabs{display:flex;gap:0;background:var(--dark);padding:0 28px;border-bottom:1px solid #333;overflow-x:auto}
+.tab{padding:11px 22px;cursor:pointer;font-size:13px;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--gold2);border-bottom-color:var(--gold);font-weight:600}
+.bot-bar{background:rgba(0,0,0,.3);padding:5px 28px;font-size:11px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #222}
+.bdot{width:7px;height:7px;border-radius:50%}
+.bdot.on{background:var(--green);box-shadow:0 0 5px var(--green)}
+.bdot.off{background:#555}
+.main{padding:22px 28px}
+.page{display:none}.page.active{display:block}
+.sc-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.sc{background:var(--card);border-radius:10px;padding:16px 18px;border-left:3px solid var(--gold)}
+.sc.c2{border-left-color:var(--green)}.sc.c3{border-left-color:var(--blue)}.sc.c4{border-left-color:var(--orange)}
+.sc .v{font-size:28px;font-weight:700;color:var(--gold2)}
+.sc.c2 .v{color:var(--green)}.sc.c3 .v{color:var(--blue)}.sc.c4 .v{color:var(--orange)}
+.sc .l{font-size:11px;color:var(--muted);margin-top:2px}
+.sh{font-size:13px;font-weight:700;color:var(--gold2);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid #333;display:flex;align-items:center;justify-content:space-between}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{background:var(--card);color:var(--muted);padding:9px 11px;text-align:left;font-weight:600;border-bottom:2px solid #333;white-space:nowrap}
+td{padding:9px 11px;border-bottom:1px solid #242438;vertical-align:middle}
+tr:hover td{background:rgba(184,151,42,.05);cursor:pointer}
+.dg{display:flex;flex-wrap:wrap;gap:3px}
+.dot{width:21px;height:21px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;cursor:pointer;position:relative;transition:transform .1s;flex-shrink:0}
+.dot:hover{transform:scale(1.25);z-index:9}
+.dot:hover::after{content:attr(d);position:absolute;bottom:115%;left:50%;transform:translateX(-50%);background:#111;color:#eee;padding:3px 7px;border-radius:4px;font-size:10px;white-space:nowrap;z-index:100;border:1px solid #333;pointer-events:none}
+.dot.d1{background:var(--green);color:#000}
+.dot.d2{background:var(--orange);color:#000}
+.dot.d0{background:#2a2a40;color:#555;border:1px solid #333}
+.pb{background:#2a2a40;border-radius:4px;height:5px;overflow:hidden;min-width:80px}
+.pf{height:100%;border-radius:4px;background:var(--green)}
+.pt{font-size:10px;color:var(--muted);margin-top:2px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.b-done{background:rgba(76,175,130,.2);color:var(--green)}
+.b-prog{background:rgba(224,154,92,.2);color:var(--orange)}
+.b-wait{background:rgba(153,153,187,.12);color:var(--muted)}
+.b-tbd{background:rgba(156,110,224,.2);color:var(--purple)}
+.b-co{background:rgba(92,158,224,.2);color:var(--blue)}
+.b-dr{background:rgba(76,175,130,.2);color:var(--green)}
+.b-gv{background:rgba(184,151,42,.2);color:var(--gold2)}
+.b-re{background:rgba(224,154,92,.2);color:var(--orange)}
+.leg{display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.ld{width:12px;height:12px;border-radius:2px}
+.cc{background:var(--card);border-radius:12px;padding:18px 20px;margin-bottom:14px;border:1px solid #2a2a3a}
+.cc-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.cc-title{font-size:16px;font-weight:700;color:var(--gold2)}
+.cc-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.cc-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.cc-mi label{font-size:10px;color:var(--muted);display:block;margin-bottom:2px}
+.cc-mi span{font-size:12px;font-weight:600}
+.svc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.svc-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card2);border-radius:6px;cursor:pointer;font-size:12px;transition:background .15s}
+.svc-item:hover{background:#333355}
+.svc-ck{width:16px;height:16px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
+.svc-ck.d1{background:var(--green);color:#000}
+.svc-ck.d2{background:var(--orange);color:#000}
+.svc-ck.d0{background:#333;border:1px dashed #555;color:#555}
+.sl{display:flex;flex-direction:column;gap:10px}
+.si{display:flex;gap:16px;align-items:flex-start;background:var(--card);border-radius:8px;padding:11px 16px;border-left:3px solid var(--blue)}
+.si.urg{border-left-color:var(--red)}
+.si.don{border-left-color:var(--green);opacity:.7}
+.si.tbd{border-left-color:var(--purple)}
+.si-date{font-size:12px;font-weight:700;color:var(--blue);min-width:64px}
+.si.urg .si-date{color:var(--red)}.si.don .si-date{color:var(--green)}.si.tbd .si-date{color:var(--purple)}
+.si-title{font-size:13px;font-weight:600}
+.si-client{font-size:11px;color:var(--muted);margin-top:2px}
+.step-list{display:flex;flex-direction:column;gap:5px}
+.step-item{display:flex;align-items:center;gap:9px;padding:8px 11px;background:var(--card2);border-radius:6px}
+.step-ck{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:11px;transition:all .15s}
+.step-ck.done{background:var(--green);color:#000}
+.step-ck.todo{background:#333;border:1px dashed #555;color:#555}
+.step-ck.todo:hover{border-color:var(--green);color:var(--green)}
+.step-info{flex:1}
+.step-name{font-size:12px;font-weight:600}
+.step-name.st{text-decoration:line-through;color:var(--muted)}
+.step-timing{font-size:10px;color:var(--muted)}
+.step-cur{font-size:9px;color:var(--orange);margin-left:4px}
+.fb{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.fb input,.fb select{background:var(--card);border:1px solid #333;color:var(--text);border-radius:6px;padding:7px 10px;font-size:12px}
+.fb input{width:200px}
+.fb input:focus,.fb select:focus{outline:none;border-color:var(--gold)}
+.btn{padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s}
+.bp{background:var(--gold);color:#000}.bp:hover{background:var(--gold2)}
+.bg{background:none;border:1px solid #444;color:var(--muted)}.bg:hover{border-color:var(--gold);color:var(--gold2)}
+.br{background:rgba(224,92,92,.15);border:1px solid var(--red);color:var(--red)}.br:hover{background:rgba(224,92,92,.3)}
+.bsm{padding:4px 9px;font-size:10px}
+.bgr{background:var(--green);color:#000}.bgr:hover{opacity:.85}
+.mb{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:none;align-items:center;justify-content:center}
+.mb.open{display:flex}
+.modal{background:var(--card);border-radius:14px;padding:26px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;border:1px solid #333}
+.modal-title{font-size:16px;font-weight:700;color:var(--gold2);margin-bottom:18px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ff{grid-column:1/-1}
+.form-group label{font-size:10px;color:var(--muted);display:block;margin-bottom:4px}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:#1a1a2c;border:1px solid #333;color:var(--text);border-radius:5px;padding:7px 9px;font-size:12px}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--gold)}
+.form-group select option{background:#1a1a2c}
+.ma{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.stcard{background:var(--card);border-radius:12px;padding:22px;margin-bottom:18px;max-width:540px}
+.stcard h3{font-size:13px;font-weight:700;color:var(--gold2);margin-bottom:14px}
+.strow{margin-bottom:12px}
+.strow label{font-size:10px;color:var(--muted);display:block;margin-bottom:4px}
+.tipbox{background:rgba(92,158,224,.07);border:1px solid rgba(92,158,224,.2);border-radius:8px;padding:11px;font-size:11px;color:var(--blue);margin-top:12px;line-height:1.7}
+.tipbox strong{color:var(--gold2)}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--card);border:1px solid #444;border-radius:8px;padding:10px 16px;font-size:12.5px;z-index:9999;transform:translateY(80px);opacity:0;transition:all .25s}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:var(--green);color:var(--green)}
+.toast.err{border-color:var(--red);color:var(--red)}
+.tl{display:flex;flex-direction:column;gap:0}
+.tli{display:flex;gap:12px;padding-bottom:14px;position:relative}
+.tli:last-child{padding-bottom:0}
+.tl-left{display:flex;flex-direction:column;align-items:center;width:20px;flex-shrink:0}
+.tl-dot{width:13px;height:13px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.tl-dot.done{background:var(--green)}
+.tl-dot.curr{background:var(--orange);box-shadow:0 0 7px var(--orange)}
+.tl-dot.todo{background:#333;border:2px dashed #555}
+.tl-line{flex:1;width:2px;background:#2a2a40;margin-top:4px}
+.tli:last-child .tl-line{display:none}
+.tl-content{flex:1}
+.tl-title{font-size:12px;font-weight:600}
+.tl-title.st{text-decoration:line-through;color:var(--muted)}
+.tl-timing{font-size:10px;color:var(--muted);margin-top:1px}
+.cat-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:600}
+.cc-body{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.pay-tag{font-size:11px;color:var(--blue);background:rgba(92,158,224,.12);padding:2px 7px;border-radius:8px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#1a1a2a}
+::-webkit-scrollbar-thumb{background:#444;border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <h1>⭐ VIP 고객 서비스 대시보드</h1>
+    <p>Tax Announcement · UAE 법인설립 · 비자 서비스 관리 &nbsp;|&nbsp; 📂 오프라인 독립 실행 버전</p>
+  </div>
+  <div class="hdr-stats">
+    <div class="hs"><div class="v" id="h-total">0</div><div class="l">총 고객</div></div>
+    <div class="hs"><div class="v" id="h-active">0</div><div class="l">활성 계약</div></div>
+    <div class="hs"><div class="v" id="h-tbd">0</div><div class="l">TBD (예정)</div></div>
+    <div class="hs"><div class="v" id="h-rev" style="color:var(--gold2)">-</div><div class="l">총 계약액 (추정)</div></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('overview')">■ 전체 현황</div>
+  <div class="tab" onclick="showTab('detail')">▤▤ 고객별 상세</div>
+  <div class="tab" onclick="showTab('schedule')">▦ 스케줄</div>
+  <div class="tab" onclick="showTab('svcstat')">✦ 서비스 현황</div>
+  <div style="width:1px;background:#333;margin:6px 8px;flex-shrink:0"></div>
+  <div class="tab" onclick="showTab('company')">🏢 법인 CRM</div>
+  <div class="tab" onclick="showTab('doctor')">👨‍⚕️ 의사 CRM</div>
+  <div class="tab" onclick="showTab('goldenvisa')">🌟 골든비자 CRM</div>
+  <div class="tab" onclick="showTab('realestate')">🏠 부동산 CRM</div>
+  <div style="width:1px;background:#333;margin:6px 8px;flex-shrink:0"></div>
+  <div class="tab" onclick="showTab('contacts')">📬 연락처 & 발송</div>
+  <div class="tab" onclick="showTab('settings')">⚙️ 설정</div>
+</div>
+
+<div class="bot-bar">
+  <div class="bdot off"></div>
+  <span style="color:var(--muted)">📂 오프라인 모드 — 데이터는 브라우저에 저장됩니다 (localStorage). 서버 실행 시 시작.bat 사용</span>
+  <span style="margin-left:auto;color:var(--muted)" id="last-saved"></span>
+</div>
+
+<div class="main">
+
+<div id="tab-overview" class="page active">
+  <div class="sc-row" id="ov-stats"></div>
+  <div class="sh">
+    고객 서비스 현황 <span style="font-size:10px;color:var(--muted);font-weight:400">클릭하면 상세 이동</span>
+    <button class="btn bp bsm" onclick="openAdd()">+ 고객 추가</button>
+  </div>
+  <div class="leg">
+    <div class="li"><div class="ld" style="background:var(--green)"></div>완료</div>
+    <div class="li"><div class="ld" style="background:var(--orange)"></div>진행 중</div>
+    <div class="li"><div class="ld" style="background:#2a2a40;border:1px solid #333"></div>미신청</div>
+  </div>
+  <div style="font-size:10px;color:var(--muted);margin-bottom:10px">
+    법인설립: 1=Freezone 2=비자 3=메디컬 4=바이오 5=EID 6=가상사무실 7=월별기장 8=개인은행 9=법인은행 10=핸드폰 11=법인인증 12=KYC 13=사업자등록증 14=법인등기 15=번역 16=레터헤드
+  </div>
+  <div class="tw">
+    <table><thead><tr>
+      <th>#</th><th>고객사</th><th>대표자</th><th>계약일</th>
+      <th>결제계좌</th><th>결제금액</th><th>서비스 항목 (1~16)</th><th>진행률</th><th>상태</th>
+    </tr></thead><tbody id="ov-tbody"></tbody></table>
+  </div>
+</div>
+
+<div id="tab-detail" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="font-size:18px;font-weight:700;color:var(--gold2)">👥 고객별 상세</div>
+    <button class="btn bp bsm" onclick="openAdd()">+ 고객 추가</button>
+  </div>
+  <div class="fb">
+    <input type="text" id="det-q" placeholder="🔍 고객명, 대표자 검색..." oninput="renderDetail()">
+    <select id="det-cat" onchange="renderDetail()">
+      <option value="">전체 카테고리</option>
+      <option value="company">🏢 법인 설립</option>
+      <option value="doctor">👨‍⚕️ 의사 라이센싱</option>
+      <option value="goldenvisa">🌟 골든비자</option>
+      <option value="realestate">🏠 부동산</option>
+    </select>
+  </div>
+  <div id="det-container"></div>
+</div>
+
+<div id="tab-schedule" class="page">
+  <div class="sc-row" style="grid-template-columns:repeat(3,1fr)">
+    <div class="sc c4"><div class="v" id="sch-this">0</div><div class="l">이번 달 / 지연</div></div>
+    <div class="sc c3"><div class="v" id="sch-next">0</div><div class="l">다음 달 이후 예정</div></div>
+    <div class="sc c2"><div class="v" id="sch-done">0</div><div class="l">완료된 항목</div></div>
+  </div>
+  <div class="sh">📅 서비스 스케줄 타임라인</div>
+  <div class="sl" id="sch-list"></div>
+</div>
+
+<div id="tab-svcstat" class="page">
+  <div class="sh">🔧 16개 서비스 항목별 완료 현황</div>
+  <div class="tw"><table><thead><tr>
+    <th>No.</th><th>서비스 항목</th><th>완료 고객</th><th>진행 중</th><th>미신청</th><th>전체 완료율</th>
+  </tr></thead><tbody id="svc-tbody"></tbody></table></div>
+</div>
+
+<div id="tab-company" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:18px;font-weight:700;color:var(--gold2)">🏢 법인 설립 CRM</div>
+    <button class="btn bp bsm" onclick="openAdd('company')">+ 고객 추가</button>
+  </div>
+  <div id="crm-company"></div>
+</div>
+
+<div id="tab-doctor" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:18px;font-weight:700;color:var(--gold2)">👨‍⚕️ 의사 라이센싱 CRM</div>
+    <button class="btn bp bsm" onclick="openAdd('doctor')">+ 고객 추가</button>
+  </div>
+  <div id="crm-doctor"></div>
+</div>
+
+<div id="tab-goldenvisa" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:18px;font-weight:700;color:var(--gold2)">🌟 골든비자 CRM</div>
+    <button class="btn bp bsm" onclick="openAdd('goldenvisa')">+ 고객 추가</button>
+  </div>
+  <div id="crm-goldenvisa"></div>
+</div>
+
+<div id="tab-realestate" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-size:18px;font-weight:700;color:var(--gold2)">🏠 부동산 CRM</div>
+    <button class="btn bp bsm" onclick="openAdd('realestate')">+ 고객 추가</button>
+  </div>
+  <div id="crm-realestate"></div>
+</div>
+
+<div id="tab-contacts" class="page">
+  <div style="font-size:18px;font-weight:700;color:var(--gold2);margin-bottom:4px">📬 연락처 & 발송</div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:18px">고객 연락처 관리 · 이메일 / SMS 단체 발송</div>
+
+  <!-- CONTACT TABLE -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div class="sh" style="margin-bottom:0;border:none;padding:0">👥 전체 연락처</div>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="ct-q" placeholder="🔍 이름/회사 검색..." oninput="renderContacts()"
+        style="background:var(--card);border:1px solid #333;color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;width:180px">
+      <button class="btn bg bsm" onclick="copyAllEmails()">📋 이메일 전체 복사</button>
+      <button class="btn bg bsm" onclick="copyAllKR()">📋 한국번호 전체 복사</button>
+    </div>
+  </div>
+  <div class="tw" style="margin-bottom:24px">
+    <table><thead><tr>
+      <th>#</th><th>고객사</th><th>대표자</th><th>카테고리</th>
+      <th>한국 번호</th><th>두바이 번호</th><th>이메일</th><th>편집</th>
+    </tr></thead><tbody id="ct-tbody"></tbody></table>
+  </div>
+
+  <!-- EMAIL PANEL -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+    <div class="stcard" style="max-width:none">
+      <h3>✉️ 이메일 자동 보내기</h3>
+      <div class="strow">
+        <label>수신자 선택</label>
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+          <button class="btn bg bsm" onclick="selectEmailRecip('all')">전체</button>
+          <button class="btn bg bsm" onclick="selectEmailRecip('company')">🏢 법인</button>
+          <button class="btn bg bsm" onclick="selectEmailRecip('doctor')">👨‍⚕️ 의사</button>
+          <button class="btn bg bsm" onclick="selectEmailRecip('goldenvisa')">🌟 골든비자</button>
+          <button class="btn bg bsm" onclick="selectEmailRecip('realestate')">🏠 부동산</button>
+        </div>
+        <div id="email-recip-box" style="background:#1a1a2c;border:1px solid #333;border-radius:5px;padding:8px;font-size:11px;color:var(--muted);min-height:44px;max-height:90px;overflow-y:auto;line-height:1.8">
+          수신자를 위에서 선택하세요
+        </div>
+      </div>
+      <div class="strow">
+        <label>제목</label>
+        <input id="email-subject" placeholder="[Tax Announcement] UAE 서비스 안내" style="background:#1a1a2c;border:1px solid #333;color:var(--text);border-radius:5px;padding:8px 10px;font-size:12px;width:100%">
+      </div>
+      <div class="strow">
+        <label>본문</label>
+        <textarea id="email-body" rows="7" placeholder="안녕하세요&#10;&#10;Tax Announcement입니다.&#10;&#10;..." style="width:100%;background:#1a1a2c;border:1px solid #333;color:var(--text);border-radius:5px;padding:8px 10px;font-size:12px;resize:vertical"></textarea>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn bp" onclick="sendEmail()">✉️ 이메일 클라이언트로 열기</button>
+        <button class="btn bg bsm" onclick="copyEmailList()">📋 주소 복사</button>
+      </div>
+      <div class="tipbox" style="margin-top:10px">
+        <strong>💡 안내:</strong> 버튼 클릭 시 기본 이메일 앱(Outlook 등)이 열립니다.<br>
+        수신자가 많은 경우 "주소 복사" 후 직접 붙여넣기하세요.
+      </div>
+    </div>
+
+    <div class="stcard" style="max-width:none">
+      <h3>📱 SMS 단체 보내기</h3>
+      <div class="strow">
+        <label>번호 선택</label>
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+          <button class="btn bg bsm" onclick="selectSMSRecip('kr-all')">한국번호 전체</button>
+          <button class="btn bg bsm" onclick="selectSMSRecip('uae-all')">두바이번호 전체</button>
+          <button class="btn bg bsm" onclick="selectSMSRecip('kr-company')">🏢 법인 KR</button>
+          <button class="btn bg bsm" onclick="selectSMSRecip('kr-doctor')">👨‍⚕️ 의사 KR</button>
+        </div>
+        <div id="sms-recip-box" style="background:#1a1a2c;border:1px solid #333;border-radius:5px;padding:8px;font-size:11px;color:var(--muted);min-height:44px;max-height:90px;overflow-y:auto;line-height:1.8">
+          수신자를 위에서 선택하세요
+        </div>
+      </div>
+      <div class="strow">
+        <label>메시지 (SMS / 카카오)</label>
+        <textarea id="sms-body" rows="7" placeholder="안녕하세요 대표님&#10;&#10;Tax Announcement입니다.&#10;&#10;..." style="width:100%;background:#1a1a2c;border:1px solid #333;color:var(--text);border-radius:5px;padding:8px 10px;font-size:12px;resize:vertical"></textarea>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px">
+          글자수: <span id="sms-len">0</span>자 (90자 초과시 장문 SMS)
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn bp" onclick="copySMSBundle()">📋 번호+메시지 복사</button>
+        <button class="btn bg bsm" onclick="copyPhoneList()">📋 번호만 복사</button>
+      </div>
+      <div class="tipbox" style="margin-top:10px">
+        <strong>💡 사용법:</strong> "번호+메시지 복사" → 카카오톡 채널 / 문자 앱에 붙여넣기<br>
+        번호 목록만 필요하면 "번호만 복사"를 누르세요.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="tab-settings" class="page">
+  <div style="font-size:18px;font-weight:700;color:var(--gold2);margin-bottom:18px">⚙️ 설정</div>
+
+  <!-- DB 초기화 카드 -->
+  <div class="stcard" style="border:1px solid #c0392b33;margin-bottom:16px">
+    <h3 style="color:#e74c3c">🔄 데이터 초기화</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+      고객 DB가 비어있거나 오류가 있을 때 사용하세요.<br>
+      기본 18개 고객 데이터로 완전히 초기화됩니다.
+    </p>
+    <button onclick="if(confirm('localStorage를 초기화하고 기본 18개 고객 데이터를 로드합니다.\n계속하시겠습니까?')){localStorage.removeItem('vip_crm_data_v2');location.reload();}" style="background:#c0392b;color:#fff;border:none;border-radius:6px;padding:8px 20px;cursor:pointer;font-size:13px;font-weight:600">
+      🗑️ DB 초기화 (기본 18개 고객으로 리셋)
+    </button>
+  </div>
+
+  <!-- DOCUSIGN CARD -->
+  <div class="stcard">
+    <h3>📄 DocuSign 계약 자동 등록</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px">
+      <!-- 서버 모드 -->
+      <div style="background:#1a1a2c;border:1px solid #333;border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--gold2);margin-bottom:8px">🖥️ 서버 모드 (시작.bat 실행 중)</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.8;margin-bottom:10px">
+          DocuSign 관리자 → Connect 설정에서<br>아래 URL을 Webhook 주소로 등록하세요:
+        </div>
+        <div style="background:#111;border:1px solid #333;border-radius:5px;padding:8px;font-size:11px;color:var(--blue);font-family:monospace;cursor:pointer"
+          onclick="copyDsUrl()" title="클릭하여 복사">
+          http://localhost:3000/api/docusign-webhook
+        </div>
+        <button class="btn bg bsm" onclick="copyDsUrl()" style="margin-top:8px">📋 URL 복사</button>
+      </div>
+      <!-- 오프라인 모드 -->
+      <div style="background:#1a1a2c;border:1px solid #333;border-radius:8px;padding:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--gold2);margin-bottom:8px">📂 오프라인 모드 (이 HTML 파일)</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.8;margin-bottom:10px">
+          DocuSign에서 완료된 계약 JSON을<br>붙여넣기하면 고객이 자동 등록됩니다.
+        </div>
+        <button class="btn bp bsm" onclick="openDsImport()">📄 계약 JSON 가져오기</button>
+      </div>
+    </div>
+
+    <!-- DocuSign 필드 매핑 안내 -->
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px">📋 DocuSign 템플릿 커스텀 필드 설정 (Text Custom Fields)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        ${[['회사명','company (회사/상호명)'],['대표자','담당자 이름'],['카테고리','company / doctor / goldenvisa / realestate'],
+           ['계약금액','$8,500 형식'],['결제계좌','KB국민은행 등'],['한국연락처','010-XXXX-XXXX'],
+           ['두바이번호','+971-50-XXX-XXXX'],['이메일','이메일 주소'],['입국예정일','2026.07.01 형식']
+          ].map(([k,v])=>`<div style="background:#1a1a2c;border:1px solid #333;border-radius:4px;padding:6px 8px">
+            <div style="font-size:10px;color:var(--gold2);font-weight:700">${k}</div>
+            <div style="font-size:10px;color:var(--muted)">${v}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="tipbox">
+      <strong>📖 DocuSign Connect 설정 방법:</strong><br>
+      1. DocuSign 관리자 → Settings → Connect → Add Configuration<br>
+      2. URL: <code style="background:#1a1a2c;padding:1px 5px;border-radius:3px">http://서버IP:3000/api/docusign-webhook</code><br>
+      3. Trigger: Envelope Completed<br>
+      4. Include: Custom Fields, Recipients<br>
+      5. 계약서 템플릿에 위 커스텀 필드를 추가해두면 서명 완료 시 CRM 자동 등록됩니다 🎉
+    </div>
+  </div>
+
+  <div class="stcard">
+    <h3>💾 데이터 관리</h3>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn bp" onclick="exportData()">📥 데이터 내보내기 (JSON)</button>
+      <button class="btn bg" onclick="document.getElementById('import-file').click()">📤 데이터 가져오기</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+      <button class="btn br" onclick="resetData()">🔄 초기 18명 데이터로 리셋</button>
+    </div>
+    <div class="tipbox">
+      <strong>📖 오프라인 모드 안내:</strong><br>
+      • 모든 변경사항은 <strong>브라우저 localStorage</strong>에 자동 저장됩니다<br>
+      • "데이터 내보내기"로 JSON 파일을 PC에 백업하세요<br>
+      • Telegram 봇 기능은 Node.js 서버 버전(<strong>시작.bat</strong>)에서 사용 가능합니다<br>
+      • 서버 버전: <code style="background:#1a1a2c;padding:2px 5px;border-radius:3px">vip-crm 폴더 → 시작.bat 더블클릭 → http://localhost:3000</code>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- MODAL -->
+<!-- DOCUSIGN IMPORT MODAL -->
+<div class="mb" id="ds-modal-bg" onclick="if(event.target===this)closeDsModal()">
+<div class="modal" style="width:560px">
+  <div class="modal-title">📄 DocuSign 계약 JSON 가져오기</div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:12px;line-height:1.7">
+    DocuSign → Manage → 완료된 계약 선택 → Download → JSON 파일 내용을 붙여넣거나,<br>
+    아래 항목을 직접 입력해도 됩니다.
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button class="btn bp bsm" onclick="document.getElementById('ds-paste-area').style.display='block';document.getElementById('ds-manual-area').style.display='none'">JSON 붙여넣기</button>
+    <button class="btn bg bsm" onclick="document.getElementById('ds-manual-area').style.display='block';document.getElementById('ds-paste-area').style.display='none'">직접 입력</button>
+  </div>
+
+  <!-- Paste JSON -->
+  <div id="ds-paste-area" style="display:none">
+    <div class="form-group ff">
+      <label>DocuSign Webhook JSON 붙여넣기</label>
+      <textarea id="ds-json" rows="8" placeholder='{"status":"completed","envelopeId":"...","recipients":{"signers":[{"name":"홍길동","email":"test@email.com"}]},"customFields":{"textCustomFields":[{"name":"회사명","value":"NIA Cloud"},{"name":"카테고리","value":"company"}]}}'
+        style="background:#1a1a2c;border:1px solid #333;color:var(--text);border-radius:5px;padding:8px;font-size:11px;width:100%;resize:vertical"></textarea>
+    </div>
+    <button class="btn bp" style="margin-top:8px" onclick="importDsJson()">📥 파싱 후 등록</button>
+  </div>
+
+  <!-- Manual -->
+  <div id="ds-manual-area" style="display:block">
+    <div class="fg">
+      <div class="form-group"><label>카테고리 *</label>
+        <select id="ds-cat">
+          <option value="company">🏢 법인 설립</option>
+          <option value="doctor">👨‍⚕️ 의사 라이센싱</option>
+          <option value="goldenvisa">🌟 골든비자</option>
+          <option value="realestate">🏠 부동산</option>
+        </select>
+      </div>
+      <div class="form-group"><label>DocuSign Envelope ID</label><input id="ds-env" placeholder="자동 생성됩니다"></div>
+      <div class="form-group"><label>회사명</label><input id="ds-co" placeholder="NIA Cloud"></div>
+      <div class="form-group"><label>대표자</label><input id="ds-rep" placeholder="홍길동 대표"></div>
+      <div class="form-group"><label>계약금액</label><input id="ds-pay" placeholder="$8,500"></div>
+      <div class="form-group"><label>결제계좌</label><input id="ds-acc" placeholder="KB국민은행"></div>
+      <div class="form-group"><label>이메일</label><input id="ds-email" placeholder="test@email.com"></div>
+      <div class="form-group"><label>한국연락처</label><input id="ds-phone" placeholder="010-0000-0000"></div>
+      <div class="form-group"><label>입국예정일</label><input id="ds-entry" placeholder="2026.07.01"></div>
+      <div class="form-group ff"><label>계약일 (오늘)</label><input id="ds-date" placeholder="자동입력"></div>
+    </div>
+  </div>
+
+  <div class="ma">
+    <button class="btn bg" onclick="closeDsModal()">취소</button>
+    <button class="btn bp" onclick="saveDsClient()">✅ CRM에 등록</button>
+  </div>
+</div>
+</div>
+
+<div class="mb" id="modal-bg" onclick="closeMb(event)">
+<div class="modal">
+  <div class="modal-title" id="modal-title">고객 추가</div>
+  <input type="hidden" id="edit-id">
+  <div class="fg">
+    <div class="form-group ff">
+      <label>카테고리 *</label>
+      <select id="f-cat" onchange="updateFFields()">
+        <option value="company">🏢 법인 설립</option>
+        <option value="doctor">👨‍⚕️ 의사 라이센싱</option>
+        <option value="goldenvisa">🌟 골든비자</option>
+        <option value="realestate">🏠 부동산</option>
+      </select>
+    </div>
+    <div class="form-group"><label>고객사/이름</label><input id="f-co" placeholder="Company Name"></div>
+    <div class="form-group"><label>대표자</label><input id="f-rep" placeholder="홍길동 대표"></div>
+    <div class="form-group"><label>계약일</label><input id="f-date" placeholder="2026.06"></div>
+    <div class="form-group"><label>결제 금액</label><input id="f-pay" placeholder="$8,500"></div>
+    <div class="form-group"><label>결제 계좌</label><input id="f-acc" placeholder="KB국민은행"></div>
+    <div class="form-group"><label>한국 연락처</label><input id="f-phone" placeholder="010-0000-0000"></div>
+    <div class="form-group"><label>두바이 번호</label><input id="f-phone-uae" placeholder="+971-50-000-0000"></div>
+    <div class="form-group ff"><label>이메일</label><input id="f-email" placeholder="example@email.com" type="email"></div>
+    <div class="form-group" id="f-entry-wrap"><label>입국 예정일</label><input id="f-entry" placeholder="2026.07.15"></div>
+    <div class="form-group ff"><label>Telegram Chat ID</label><input id="f-tg" placeholder="123456789"></div>
+    <div class="form-group ff"><label>메모</label><input id="f-notes" placeholder="특이사항"></div>
+  </div>
+  <div class="ma">
+    <button class="btn bg" onclick="closeMb()">취소</button>
+    <button class="btn bp" onclick="saveClient()">저장</button>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// STEP DEFINITIONS (from server.js)
+// ═══════════════════════════════════════════════════════
+const STEPS = {
+  company: [
+    { id:'pre_evisa_notify',   phase:'입국 전',  name:'eVISA 신청 안내 발송',   timing:'입국 3주 전' },
+    { id:'pre_evisa_received', phase:'입국 전',  name:'eVISA 발급 확인',        timing:'입국 2주 전' },
+    { id:'entry',              phase:'입국',     name:'입국 완료',              timing:'D-Day' },
+    { id:'medical',            phase:'입국 후',  name:'Medical Test 완료',      timing:'입국 후 1-3일' },
+    { id:'biometrics',         phase:'입국 후',  name:'Biometrics 등록',        timing:'입국 후 3-5일' },
+    { id:'immigration_card',   phase:'입국 후',  name:'Immigration Card 발급',  timing:'입국 후 5-7일' },
+    { id:'emirates_id',        phase:'입국 후',  name:'Emirates ID Card',       timing:'입국 후 7-10일' },
+    { id:'personal_bank',      phase:'입국 후',  name:'개인 은행 계좌 개설',    timing:'입국 후 10-14일' },
+    { id:'corp_bank',          phase:'입국 후',  name:'법인 은행 계좌 개설',    timing:'입국 후 12-17일' },
+  ],
+  doctor: [
+    { id:'d_docs',       phase:'서류',  name:'서류 수신 완료',               timing:'Week 1' },
+    { id:'d_dha',        phase:'계정',  name:'DHA 계정 개설',                timing:'Week 1-2' },
+    { id:'d_dataflow',   phase:'검증',  name:'DataFlow 등록/Credentialing',  timing:'Week 2-4' },
+    { id:'d_psv',        phase:'검증',  name:'PSV 완료',                     timing:'Week 4-6' },
+    { id:'d_cbt_sch',    phase:'시험',  name:'DHA Licensing Test 일정 확정', timing:'Week 6-8' },
+    { id:'d_cbt_done',   phase:'시험',  name:'CBT 시험 완료',                timing:'Week 8-10' },
+    { id:'d_translation',phase:'서류',  name:'문서 번역/공증/Attestation',   timing:'Week 10-11' },
+    { id:'d_activation', phase:'최종',  name:'License Activation',           timing:'Week 11' },
+    { id:'d_submit',     phase:'최종',  name:'DataFlow Submission 완료',     timing:'Week 11-12' },
+    { id:'d_issued',     phase:'완료',  name:'🏆 License 발급 완료',         timing:'Week 12' },
+  ],
+  goldenvisa: [
+    { id:'g_notify',     phase:'입국 전', name:'입국 3-4주 전 안내 발송',   timing:'입국 3-4주 전' },
+    { id:'g_evisa_app',  phase:'입국 전', name:'eVISA 신청 완료',           timing:'입국 3주 전' },
+    { id:'g_evisa_rcv',  phase:'입국 전', name:'eVISA 수령 확인',           timing:'입국 2주 전' },
+    { id:'g_entry',      phase:'입국',    name:'입국 완료',                  timing:'D-Day' },
+    { id:'g_medical',    phase:'입국 후', name:'Medical Test 완료',          timing:'입국 후 1-3일' },
+    { id:'g_biometrics', phase:'입국 후', name:'Biometrics 등록 완료',       timing:'입국 후 3-5일' },
+    { id:'g_issued',     phase:'완료',    name:'🏆 골든비자 발급 완료',      timing:'심사 후' },
+  ],
+  realestate: [
+    { id:'r_contract',  phase:'계약',    name:'계약서 서명 + 텔레그램 발송', timing:'계약일' },
+    { id:'r_pay1',      phase:'납입',    name:'1차 납입 완료',               timing:'계약 후 즉시' },
+    { id:'r_dld',       phase:'등기',    name:'DLD 등록 완료',               timing:'계약 후 2주' },
+    { id:'r_pay2',      phase:'납입',    name:'2차 납입 안내',               timing:'납입 일정' },
+    { id:'r_pay3',      phase:'납입',    name:'3차 납입 안내',               timing:'납입 일정' },
+    { id:'r_gv_notify', phase:'골든비자',name:'골든비자 신청 안내',          timing:'완공 6개월 전' },
+    { id:'r_handover',  phase:'완료',    name:'🏠 부동산 인도 완료',         timing:'완공 후' },
+  ]
+};
+
+const SERVICES = {
+  company: [
+    "Freezone Dubai 설립 (라이센스)",
+    "비자발급 ($3,650/1명당)",
+    "메디컬 테스트",
+    "바이오메트릭스 등록",
+    "Emirate ID Card 등록 신청",
+    "가상 사무실 렌트비",
+    "월별 기장 서비스",
+    "개인 은행 계좌개설",
+    "법인 은행 계좌개설",
+    "현지 핸드폰 번호개설 가이드",
+    "법인인증, 사업자등록증서, Memorandum",
+    "대표자 인증 KYC",
+    "사업자등록증 발급",
+    "법인등기 수수료 납부 가이드",
+    "전체 등기 문서 번역 제출",
+    "법률문서 (Letter Head) Template 제작"
+  ],
+  doctor: [
+    "Doctor licensing Data flow 등록 / credentialing / application fee",
+    "Primary Source Verification (PSV) / 문서검증",
+    "DHA Doctor Licensing Test (Prometric Test, service fee 포함)",
+    "License activation (공식 라이센스 발급 비용) 1년",
+    "문서 검토, 번역, 공증, attestation 비용 + 행정 대행",
+    "DataFlow Submission, DHA Communication, Report Management",
+    "(선택) 취업 알선, 병원 지원 서비스 비용",
+    "(선택) 병의원 개업시 핸들링 피 (총 비용 대비 5%)",
+    "이주/정착 지원 (숙소, 초기 정착, 라이프라인 세팅, 보험, 비자)"
+  ]
+};
+
+// ═══════════════════════════════════════════════════════
+// DEFAULT DATA (18 clients — same as second answer)
+// ═══════════════════════════════════════════════════════
+// ── 스케줄 자동 계산 헬퍼 (DEFAULT_CLIENTS 생성 시 사용) ──
+function _calcStepDates(entryDateStr) {
+  const OFF = { pre_evisa_notify:-21, pre_evisa_received:-10, entry:0,
+    medical:2, biometrics:4, immigration_card:6, emirates_id:9, personal_bank:12, corp_bank:14 };
+  const sd = {};
+  if (!entryDateStr || entryDateStr==='TBD') return sd;
+  const p = entryDateStr.trim().replace(/\./g,'-').split('-');
+  if (p.length===2) p.push('01');
+  const base = new Date(p.join('-')+'T00:00:00');
+  if (isNaN(base)) return sd;
+  Object.entries(OFF).forEach(([k,v])=>{
+    const d=new Date(base); d.setDate(d.getDate()+v);
+    sd[k]=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  });
+  return sd;
+}
+
+const DEFAULT_CLIENTS = [
+  { id:1001, company:"NIA Cloud", rep:"윤정훈 대표", category:"company",
+    contractDate:"2025.04", paymentAccount:"KB국민은행", paymentAmount:"$8,500",
+    telegramChatId:"", phone:"010-1234-5001", phoneUae:"+971-50-101-5001", email:"yoon@niacloud.ae",
+    entryDate:"2025.05.10",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical","biometrics","immigration_card","emirates_id","personal_bank","corp_bank"],
+    services:[1,1,1,1,1,1,0,1,1,0,1,1,1,0,1,1],
+    stepDates:_calcStepDates("2025.05.10"), notes:"Freezone 완료, 월기장 진행 중" },
+
+  { id:1002, company:"A Code LLC", rep:"이원형 대표", category:"company",
+    contractDate:"2025.06", paymentAccount:"신한은행", paymentAmount:"$9,200",
+    telegramChatId:"", phone:"010-1234-5002", phoneUae:"+971-55-102-5002", email:"lee@acode.ae",
+    entryDate:"2025.07.05",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical","biometrics","immigration_card","emirates_id","corp_bank"],
+    services:[1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1],
+    stepDates:_calcStepDates("2025.07.05"), notes:"개인은행 계좌 개설 진행 예정" },
+
+  { id:1003, company:"Veltrana LLC", rep:"송재표 대표 (연장)", category:"company",
+    contractDate:"2025.07", paymentAccount:"우리은행", paymentAmount:"$11,000",
+    telegramChatId:"", phone:"010-1234-5003", phoneUae:"+971-56-103-5003", email:"song@veltrana.ae",
+    entryDate:"2025.08.15",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical","biometrics"],
+    services:[1,2,2,2,2,1,1,2,2,0,1,1,1,1,2,1],
+    stepDates:_calcStepDates("2025.08.15"), notes:"비자 연장 중, EID 재신청" },
+
+  { id:1004, company:"DooriArk", rep:"두리아크 대표", category:"company",
+    contractDate:"2025.08", paymentAccount:"KB국민은행", paymentAmount:"$7,800",
+    telegramChatId:"", phone:"010-1234-5004", phoneUae:"+971-50-104-5004", email:"doori@dooriark.ae",
+    entryDate:"2025.09.20",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical","biometrics","immigration_card","emirates_id","personal_bank"],
+    services:[1,1,1,1,1,0,1,1,0,0,1,1,1,0,1,0],
+    stepDates:_calcStepDates("2025.09.20"), notes:"법인 은행 개설 대기" },
+
+  { id:1005, company:"JI Capital", rep:"전진호 대표", category:"company",
+    contractDate:"2025.10", paymentAccount:"하나은행", paymentAmount:"$8,200",
+    telegramChatId:"", phone:"010-1234-5005", phoneUae:"+971-55-105-5005", email:"jun@jicapital.ae",
+    entryDate:"2025.11.10",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical","biometrics","immigration_card","emirates_id","personal_bank"],
+    services:[1,1,1,1,1,1,1,2,2,1,1,1,1,1,0,1],
+    stepDates:_calcStepDates("2025.11.10"), notes:"법인 은행 계좌 심사 중" },
+
+  { id:1006, company:"JH Investment", rep:"임진택 대표", category:"company",
+    contractDate:"2025.12", paymentAccount:"신한은행", paymentAmount:"$9,500",
+    telegramChatId:"", phone:"010-1234-5006", phoneUae:"+971-56-106-5006", email:"lim@jhinv.ae",
+    entryDate:"2026.01.15",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical"],
+    services:[1,1,0,0,2,1,1,0,2,0,1,1,1,1,2,1],
+    stepDates:_calcStepDates("2026.01.15"), notes:"메디컬·바이오 미진행, EID 신청 중" },
+
+  { id:1007, company:"Yubit LLC", rep:"진현석 대표 (야마다 회장님)", category:"company",
+    contractDate:"2025.12", paymentAccount:"KB국민은행", paymentAmount:"$15,000",
+    telegramChatId:"", phone:"010-1234-5007", phoneUae:"+971-50-107-5007", email:"jin@yubit.ae",
+    entryDate:"2026.02.01",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical"],
+    services:[1,2,2,2,2,1,1,2,2,1,1,1,1,1,1,1],
+    stepDates:_calcStepDates("2026.02.01"), notes:"비자 복수 신청 중" },
+
+  { id:1008, company:"Rainbow Pintos", rep:"김대표", category:"company",
+    contractDate:"2026.01", paymentAccount:"우리은행", paymentAmount:"$8,000",
+    telegramChatId:"", phone:"010-1234-5008", phoneUae:"+971-55-108-5008", email:"kim@rainbowpintos.ae",
+    entryDate:"2026.02.10",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical","biometrics"],
+    services:[1,1,1,1,1,0,1,2,2,0,1,1,1,0,0,0],
+    stepDates:_calcStepDates("2026.02.10"), notes:"은행 계좌 진행 중" },
+
+  { id:1009, company:"Trinitas", rep:"김충범 대표", category:"company",
+    contractDate:"2026.01", paymentAccount:"하나은행", paymentAmount:"$8,500",
+    telegramChatId:"", phone:"010-1234-5009", phoneUae:"+971-56-109-5009", email:"kim@trinitas.ae",
+    entryDate:"2026.02.05",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical","biometrics","immigration_card","emirates_id","personal_bank","corp_bank"],
+    services:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    stepDates:_calcStepDates("2026.02.05"), notes:"전 서비스 완료" },
+
+  { id:1010, company:"행복발전소", rep:"대표님", category:"company",
+    contractDate:"2026.02", paymentAccount:"신한은행", paymentAmount:"$7,500",
+    telegramChatId:"", phone:"010-1234-5010", phoneUae:"+971-50-110-5010", email:"ceo@happypower.ae",
+    entryDate:"2026.03.01",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical"],
+    services:[1,2,2,2,2,0,1,0,2,0,1,1,1,0,0,0],
+    stepDates:_calcStepDates("2026.03.01"), notes:"비자 및 관련 서류 진행 중" },
+
+  { id:1011, company:"부동산 (2026.02)", rep:"부동산대표님", category:"company",
+    contractDate:"2026.02", paymentAccount:"KB국민은행", paymentAmount:"$9,000",
+    telegramChatId:"", phone:"010-1234-5011", phoneUae:"+971-55-111-5011", email:"ceo@realty2602.ae",
+    entryDate:"2026.03.10",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical","biometrics","immigration_card","emirates_id","personal_bank"],
+    services:[1,1,1,1,1,1,1,2,2,0,1,1,1,1,2,1],
+    stepDates:_calcStepDates("2026.03.10"), notes:"법인 은행 계좌 심사 중" },
+
+  { id:1012, company:"IMC Insight Management LLC", rep:"박현종 대표", category:"company",
+    contractDate:"2026.03", paymentAccount:"우리은행", paymentAmount:"$12,000",
+    telegramChatId:"", phone:"010-1234-5012", phoneUae:"+971-56-112-5012", email:"park@imcinsight.ae",
+    entryDate:"2026.04.01",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical"],
+    services:[1,2,2,2,2,1,1,0,2,1,1,1,1,1,2,1],
+    stepDates:_calcStepDates("2026.04.01"), notes:"비자 진행 중" },
+
+  { id:1013, company:"Tallex", rep:"하상윤 대표", category:"company",
+    contractDate:"2026.04", paymentAccount:"하나은행", paymentAmount:"$8,800",
+    telegramChatId:"", phone:"010-1234-5013", phoneUae:"+971-50-113-5013", email:"ha@tallex.ae",
+    entryDate:"2026.05.01",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical","biometrics"],
+    services:[1,1,1,1,1,0,0,0,2,0,1,1,1,0,0,0],
+    stepDates:_calcStepDates("2026.05.01"), notes:"초기 설립 단계" },
+
+  { id:1014, company:"JST Holdings", rep:"이종윤 대표", category:"company",
+    contractDate:"2026.03", paymentAccount:"신한은행", paymentAmount:"$9,200",
+    telegramChatId:"", phone:"010-1234-5014", phoneUae:"+971-55-114-5014", email:"lee@jsth.ae",
+    entryDate:"2026.04.10",
+    completedSteps:["pre_evisa_notify","pre_evisa_received","entry","medical","biometrics","immigration_card","emirates_id","personal_bank"],
+    services:[1,1,1,1,1,1,1,2,2,1,1,1,1,1,1,1],
+    stepDates:_calcStepDates("2026.04.10"), notes:"법인 은행 계좌 개설 심사 중" },
+
+  { id:1015, company:"Dr.License courses", rep:"홀진우 원장님", category:"doctor",
+    contractDate:"2026.03", paymentAccount:"KB국민은행", paymentAmount:"$7,200",
+    telegramChatId:"", phone:"010-2441-2591", phoneUae:"+971-50-244-2591", email:"dr.hol@license.ae",
+    entryDate:"",
+    completedSteps:["d_docs","d_dha"],
+    services:[1,1,0,0,0,0,0,0,0], stepDates:{}, notes:"PSV 진행 예정" },
+
+  { id:1016, company:"박문수 (TBD)", rep:"박문수 원장님", category:"doctor",
+    contractDate:"TBD", paymentAccount:"", paymentAmount:"",
+    telegramChatId:"", phone:"010-9099-0808", phoneUae:"", email:"",
+    entryDate:"",
+    completedSteps:[], services:[0,0,0,0,0,0,0,0,0], stepDates:{}, notes:"계약 예정" },
+
+  { id:1017, company:"이상현 (TBD)", rep:"이상현 대표 (대기)", category:"company",
+    contractDate:"TBD", paymentAccount:"", paymentAmount:"",
+    telegramChatId:"", phone:"010-3133-3503", phoneUae:"", email:"",
+    entryDate:"",
+    completedSteps:[], services:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], stepDates:{}, notes:"대기 중" },
+
+  { id:1018, company:"이정한 (TBD)", rep:"이정한 대표님", category:"company",
+    contractDate:"TBD", paymentAccount:"", paymentAmount:"",
+    telegramChatId:"", phone:"010-7366-4701", phoneUae:"", email:"",
+    entryDate:"",
+    completedSteps:[], services:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], stepDates:{}, notes:"계약 예정" },
+];
+
+const SCHEDULE = [
+  { date:'2026.06', cls:'urg', title:'IMC Insight — 비자 발급 완료 예정',       client:'박현종 대표' },
+  { date:'2026.06', cls:'urg', title:'행복발전소 — 바이오메트릭스 등록',        client:'대표님' },
+  { date:'2026.06', cls:'urg', title:'JST Holdings — 법인 은행 계좌 개설 완료 예정', client:'이종윤 대표' },
+  { date:'2026.07', cls:'',    title:'Veltrana LLC — 비자 연장 완료 예정',       client:'송재표 대표' },
+  { date:'2026.07', cls:'',    title:'Tallex — 월별 기장 서비스 시작',           client:'하상윤 대표' },
+  { date:'2026.07', cls:'',    title:'Dr.License — PSV 검증 완료 예정',          client:'홀진우 원장' },
+  { date:'2026.07', cls:'',    title:'JH Investment — EID Card 발급 완료 예정',  client:'임진택 대표' },
+  { date:'2026.07', cls:'',    title:'행복발전소 — 법인 은행 개설 예정',         client:'대표님' },
+  { date:'2026.08', cls:'tbd', title:'박문수 원장님 — 계약 확정 예정 (TBD)',     client:'010-9099-0808' },
+  { date:'2026.08', cls:'tbd', title:'이상현 대표 — 계약 확정 예정 (TBD)',       client:'010-3133-3503' },
+  { date:'2026.09', cls:'tbd', title:'이정한 대표 — 계약 확정 예정 (TBD)',       client:'010-7366-4701' },
+  { date:'완료',    cls:'don', title:'Trinitas — 전체 서비스 완료',              client:'김충범 대표' },
+  { date:'완료',    cls:'don', title:'NIA Cloud — Freezone 설립 완료',           client:'윤정훈 대표' },
+  { date:'완료',    cls:'don', title:'A Code LLC — 비자 발급 완료',              client:'이원형 대표' },
+];
+
+const CAT_LBL = { company:'법인 설립', doctor:'의사 라이센싱', goldenvisa:'골든비자', realestate:'부동산' };
+const CAT_ICO = { company:'🏢', doctor:'👨‍⚕️', goldenvisa:'🌟', realestate:'🏠' };
+const CAT_B   = { company:'b-co', doctor:'b-dr', goldenvisa:'b-gv', realestate:'b-re' };
+
+// ═══════════════════════════════════════════════════════
+// DATA LAYER (localStorage + version guard)
+// ═══════════════════════════════════════════════════════
+const LS_KEY    = 'vip_crm_data_v2';
+const DB_VER    = 'v2.3';   // 버전 올림 → 기존 LS 무시하고 DEFAULT 재적재
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      // 같은 버전이고 18명 이상 있으면 저장 데이터 사용
+      if (d._ver === DB_VER && d.clients && d.clients.length >= 18) {
+        // 누락 필드 보완
+        d.clients.forEach(c => {
+          if (!c.stepDates) c.stepDates = {};
+          if (!c.phoneUae) c.phoneUae = '';
+          if (!c.email) c.email = '';
+        });
+        return d;
+      }
+      // 구버전 or 고객 수 부족 → DEFAULT로 병합
+      if (d.clients && d.clients.length > 0) {
+        const merged = JSON.parse(JSON.stringify(DEFAULT_CLIENTS));
+        // 사용자가 수정한 내용 덮어쓰기
+        d.clients.forEach(sc => {
+          const idx = merged.findIndex(c => c.id === sc.id);
+          if (idx >= 0) merged[idx] = Object.assign({}, merged[idx], sc);
+        });
+        return { _ver: DB_VER, clients: merged };
+      }
+    }
+  } catch(e) { console.warn('loadData error', e); }
+  // 첫 실행 또는 복구 불가 → DEFAULT 그대로
+  return { _ver: DB_VER, clients: JSON.parse(JSON.stringify(DEFAULT_CLIENTS)) };
+}
+
+function saveData(data) {
+  data._ver = DB_VER;
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+  const now = new Date();
+  const el = document.getElementById('last-saved');
+  if(el) el.textContent = '저장됨: ' + now.toLocaleTimeString('ko-KR');
+}
+
+let DB = loadData();
+
+// ─── 날짜 헬퍼 (스케줄 자동설정보다 먼저 선언) ───────────
+function parseEntryDate(str) {
+  if(!str || str==='TBD') return null;
+  const clean = str.trim().replace(/\./g, '-');
+  const parts = clean.split('-');
+  if(parts.length===2) parts.push('01');
+  const d = new Date(parts.join('-') + 'T00:00:00');
+  return isNaN(d.getTime()) ? null : d;
+}
+function toInputDate(d) {
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+// ────────────────────────────────────────────────────────
+
+// 기존 데이터 중 법인+입국일 있는데 stepDates 없는 고객 자동 초기화
+(function initMissingSchedules() {
+  let changed = false;
+  DB.clients.forEach(c => {
+    if(c.category==='company' && c.entryDate && c.entryDate!=='TBD') {
+      const base = parseEntryDate(c.entryDate);
+      if(!base) return;
+      if(!c.stepDates || Object.keys(c.stepDates).length===0) {
+        c.stepDates = {};
+        Object.entries(COMPANY_STEP_OFFSETS).forEach(([sid,offset])=>{
+          const d=new Date(base); d.setDate(d.getDate()+offset);
+          c.stepDates[sid]=toInputDate(d);
+        });
+        changed = true;
+      }
+    }
+  });
+  if(changed) saveData(DB);
+})();
+
+// ═══════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════
+function showTab(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>{
+    if(t.getAttribute('onclick')===`showTab('${name}')`) t.classList.add('active');
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════════════════════
+function renderAll() {
+  updateHeader();
+  renderOverview();
+  renderDetail();
+  renderSchedule();
+  renderSvcStat();
+  ['company','doctor','goldenvisa','realestate'].forEach(renderCRM);
+  renderContacts();
+}
+
+// ═══════════════════════════════════════════════════════
+// HEADER
+// ═══════════════════════════════════════════════════════
+function updateHeader() {
+  const total = DB.clients.length;
+  const active = DB.clients.filter(c=>c.contractDate&&c.contractDate!=='TBD').length;
+  const tbd = DB.clients.filter(c=>c.contractDate==='TBD'||!c.contractDate).length;
+  let rev = 0;
+  DB.clients.forEach(c=>{ const n=parseFloat((c.paymentAmount||'').replace(/[^0-9.]/g,'')); if(!isNaN(n)) rev+=n; });
+  const revStr = rev>1000 ? '$'+Math.round(rev/1000)+'K' : (rev>0?'$'+rev:'-');
+  document.getElementById('h-total').textContent = total;
+  document.getElementById('h-active').textContent = active;
+  document.getElementById('h-tbd').textContent = tbd;
+  document.getElementById('h-rev').textContent = revStr;
+}
+
+// ═══════════════════════════════════════════════════════
+// 전체현황
+// ═══════════════════════════════════════════════════════
+function renderOverview() {
+  const statEl = document.getElementById('ov-stats');
+  if(statEl) {
+    const total = DB.clients.length;
+    const prog = DB.clients.filter(c=>{
+      const s=STEPS[c.category]||[]; return s.length>0&&(c.completedSteps||[]).length>0&&(c.completedSteps||[]).length<s.length;
+    }).length;
+    let rev=0; DB.clients.forEach(c=>{ const n=parseFloat((c.paymentAmount||'').replace(/[^0-9.]/g,'')); if(!isNaN(n))rev+=n; });
+    const revStr=rev>1000?'$'+Math.round(rev/1000)+'K':(rev>0?'$'+rev:'-');
+    const thisM=SCHEDULE.filter(s=>s.cls==='urg').length;
+    statEl.innerHTML=`
+      <div class="sc"><div class="v">${total}</div><div class="l">전체 고객 수</div></div>
+      <div class="sc c2"><div class="v">${prog}</div><div class="l">서비스 진행 중</div></div>
+      <div class="sc c3"><div class="v">${revStr}</div><div class="l">총 계약 금액 (추정)</div></div>
+      <div class="sc c4"><div class="v">${thisM}</div><div class="l">이번 달 완료 예정</div></div>`;
+  }
+
+  const tbody = document.getElementById('ov-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = DB.clients.map((c,i)=>{
+    const steps = STEPS[c.category]||[];
+    const doneCnt = (c.completedSteps||[]).length;
+    const totalS = steps.length;
+    const pct = totalS ? Math.round(doneCnt/totalS*100) : 0;
+
+    let dotsHtml='';
+    if(c.category==='company'||c.category==='doctor') {
+      const svcList = c.category==='company' ? SERVICES.company : SERVICES.doctor;
+      dotsHtml = `<div class="dg">${(svcList||[]).map((sv,si)=>{
+        const val=(c.services||[])[si]||0;
+        const cls=val===1?'d1':val===2?'d2':'d0';
+        const sym=val===1?'✓':val===2?'…':(si+1);
+        return `<div class="dot ${cls}" d="${si+1}. ${sv.substring(0,18)}" onclick="event.stopPropagation();cycleSvc(${c.id},${si})">${sym}</div>`;
+      }).join('')}</div>`;
+    } else {
+      dotsHtml = `<div class="dg">${steps.map((s,si)=>{
+        const done=(c.completedSteps||[]).includes(s.id);
+        return `<div class="dot ${done?'d1':'d0'}" d="${si+1}. ${s.name.substring(0,18)}">${done?'✓':(si+1)}</div>`;
+      }).join('')}</div>`;
+    }
+
+    const isTbd = !c.contractDate||c.contractDate==='TBD';
+    const statusBadge = isTbd?'b-tbd':doneCnt===totalS&&totalS>0?'b-done':doneCnt>0?'b-prog':'b-wait';
+    const statusTxt  = isTbd?'TBD':doneCnt===totalS&&totalS>0?'완료':doneCnt>0?'진행 중':'대기';
+    const payTag = c.paymentAccount ? `<span class="pay-tag">${c.paymentAccount}</span>` : '-';
+
+    return `<tr onclick="showTab('detail');setTimeout(()=>scrollDet(${c.id}),100)">
+      <td>${i+1}</td>
+      <td style="font-weight:600">${c.company||''}</td>
+      <td>${c.rep||''}</td>
+      <td>${c.contractDate||'TBD'}</td>
+      <td>${payTag}</td>
+      <td style="color:var(--gold2)">${c.paymentAmount||'-'}</td>
+      <td>${dotsHtml}</td>
+      <td>
+        <div class="pb"><div class="pf" style="width:${isTbd?0:pct}%"></div></div>
+        <div class="pt">${isTbd?'계약예정':pct+'% ('+doneCnt+'/'+totalS+')'}</div>
+      </td>
+      <td><span class="badge ${statusBadge}">${statusTxt}</span></td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">고객 없음</td></tr>`;
+}
+
+function cycleSvc(cid, idx) {
+  const c = DB.clients.find(x=>x.id==cid); if(!c) return;
+  if(!c.services) c.services=[];
+  c.services[idx]=((c.services[idx]||0)+1)%3;
+  saveData(DB);
+  renderOverview(); renderDetail(); renderSvcStat();
+}
+
+// ═══════════════════════════════════════════════════════
+// 고객별 상세
+// ═══════════════════════════════════════════════════════
+function renderDetail() {
+  const q=(document.getElementById('det-q')?.value||'').toLowerCase();
+  const cat=document.getElementById('det-cat')?.value||'';
+  const con=document.getElementById('det-container'); if(!con) return;
+
+  const list=DB.clients.filter(c=>{
+    const mt=!q||(c.company||'').toLowerCase().includes(q)||(c.rep||'').toLowerCase().includes(q);
+    const mc=!cat||c.category===cat;
+    return mt&&mc;
+  });
+
+  if(!list.length){ con.innerHTML=`<div style="text-align:center;padding:40px;color:var(--muted)">조건에 맞는 고객이 없습니다.</div>`; return; }
+  con.innerHTML=list.map(c=>buildDetCard(c)).join('');
+}
+
+function buildDetCard(c) {
+  const steps=STEPS[c.category]||[];
+  const doneSet=new Set(c.completedSteps||[]);
+  const doneCnt=doneSet.size, total=steps.length;
+  const pct=total?Math.round(doneCnt/total*100):0;
+  const isTbd=!c.contractDate||c.contractDate==='TBD';
+
+  const svcList=c.category==='company'?SERVICES.company:c.category==='doctor'?SERVICES.doctor:null;
+  let svcSec='';
+  if(svcList){
+    svcSec=`<div style="margin-top:2px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:7px">서비스 항목 (클릭하여 상태 변경)</div>
+      <div class="svc-grid">${(svcList||[]).map((sv,i)=>{
+        const val=(c.services||[])[i]||0;
+        const cls=val===1?'d1':val===2?'d2':'d0';
+        const sym=val===1?'✓':val===2?'⋯':'—';
+        const col=val===1?'color:var(--green)':val===2?'color:var(--orange)':'color:var(--muted)';
+        return `<div class="svc-item" onclick="cycleSvcDet(${c.id},${i})">
+          <div class="svc-ck ${cls}">${sym}</div>
+          <span style="${col}">${i+1}. ${sv}</span>
+        </div>`;
+      }).join('')}</div>
+    </div>`;
+  }
+
+  const stepSec=`<div>
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:7px">단계별 진행</div>
+    <div class="step-list">${steps.map((s,i)=>{
+      const done=doneSet.has(s.id);
+      const isCurr=!done&&(i===0||doneSet.has(steps[i-1]?.id));
+      const savedDate=(c.stepDates||{})[s.id]||'';
+      const dateLbl=savedDate?`<span style="font-size:9px;color:var(--blue);margin-left:4px">📅 ${fmtDate(savedDate)}</span>`:'';
+      return `<div class="step-item" style="flex-wrap:wrap;gap:6px">
+        <div class="step-ck ${done?'done':'todo'}" onclick="toggleStep(${c.id},'${s.id}','${done?'undo':'complete'}')">${done?'✓':''}</div>
+        <div class="step-info" style="min-width:0;flex:1">
+          <div class="step-name${done?' st':''}">${s.name}${isCurr?`<span class="step-cur">← 현재</span>`:''}${dateLbl}</div>
+          <div class="step-timing">${s.timing}</div>
+        </div>
+        <input type="date" value="${savedDate}"
+          onchange="setStepDate(${c.id},'${s.id}',this.value)"
+          title="일정 날짜 설정"
+          style="background:#1a1a2c;border:1px solid #444;color:var(--text);border-radius:4px;padding:3px 6px;font-size:10px;cursor:pointer;flex-shrink:0">
+      </div>`;
+    }).join('')}</div>
+  </div>`;
+
+  return `<div class="cc" id="det-${c.id}">
+    <div class="cc-hd">
+      <div>
+        <div class="cc-title">⭐ ${c.company||''}</div>
+        <div class="cc-sub">${c.rep||''}${c.phone?' · ☎ '+c.phone:''}${c.contractDate?' · 계약일: '+c.contractDate:''}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:700;color:var(--gold2)">${isTbd?'계약예정':pct+'%'}</div>
+          <div style="font-size:10px;color:var(--muted)">${isTbd?'':doneCnt+'/'+total+' 단계'}</div>
+        </div>
+        <button class="btn bg bsm" onclick="openEdit(${c.id})">✏️</button>
+        <button class="btn br bsm" onclick="deleteC(${c.id})">🗑️</button>
+      </div>
+    </div>
+    <div class="cc-meta">
+      <div class="cc-mi"><label>결제 계좌</label><span>${c.paymentAccount?`<span class="pay-tag">${c.paymentAccount}</span>`:'-'}</span></div>
+      <div class="cc-mi"><label>결제 금액</label><span style="color:var(--gold2)">${c.paymentAmount||'-'}</span></div>
+      <div class="cc-mi"><label>메모</label><span style="font-size:11px;color:var(--muted)">${c.notes||'-'}</span></div>
+    </div>
+    ${c.entryDate?`<div style="font-size:11px;color:var(--orange);margin-bottom:12px">✈️ 입국 예정: ${c.entryDate}</div>`:''}
+    <div class="cc-body">${stepSec}<div>${svcSec}</div></div>
+  </div>`;
+}
+
+function cycleSvcDet(cid,idx) {
+  cycleSvc(cid,idx);
+}
+
+function toggleStep(cid, stepId, action) {
+  const c=DB.clients.find(x=>x.id==cid); if(!c) return;
+  if(!c.completedSteps) c.completedSteps=[];
+  if(action==='complete'&&!c.completedSteps.includes(stepId)) c.completedSteps.push(stepId);
+  else if(action==='undo') c.completedSteps=c.completedSteps.filter(s=>s!==stepId);
+  saveData(DB);
+  renderAll();
+  toast(action==='complete'?'✅ 완료 처리됨':'↩ 취소됨','ok');
+}
+
+function scrollDet(id){ const el=document.getElementById('det-'+id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+
+// ═══════════════════════════════════════════════════════
+// 스케줄 (날짜 기반 — 각 단계별 날짜 설정)
+// ═══════════════════════════════════════════════════════
+const DAYS_KO = ['일','월','화','수','목','금','토'];
+
+// 입국일 기준 자동 스케줄 오프셋 (일수)
+const COMPANY_STEP_OFFSETS = {
+  pre_evisa_notify:   -21,  // 입국 3주 전
+  pre_evisa_received: -10,  // 입국 약 2주 전
+  entry:                0,  // D-Day
+  medical:              2,  // 입국 후 1-3일 → 평균
+  biometrics:           4,  // 입국 후 3-5일
+  immigration_card:     6,  // 입국 후 5-7일
+  emirates_id:          9,  // 입국 후 7-10일
+  personal_bank:       12,  // 입국 후 10-14일
+  corp_bank:           14,  // 입국 후 12-17일
+};
+
+// "2025.05.10" 또는 "2025-05-10" → Date 객체
+function parseEntryDate(str) {
+  if(!str || str==='TBD') return null;
+  const clean = str.trim().replace(/\./g, '-');
+  // "2025-05" 처럼 일자 없으면 01로 처리
+  const parts = clean.split('-');
+  if(parts.length===2) parts.push('01');
+  const d = new Date(parts.join('-') + 'T00:00:00');
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// Date → "YYYY-MM-DD"
+function toInputDate(d) {
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+// 입국일 기준으로 법인 고객 전체 단계 날짜 자동 계산
+function autoSchedule(cid) {
+  const c = DB.clients.find(x=>x.id==cid); if(!c) return;
+  const base = parseEntryDate(c.entryDate);
+  if(!base){ toast('입국 예정일을 먼저 입력해주세요 (편집 ✏️)', 'err'); return; }
+  if(c.category !== 'company'){ toast('법인 설립 고객에만 자동 적용됩니다', 'err'); return; }
+  if(!c.stepDates) c.stepDates = {};
+  Object.entries(COMPANY_STEP_OFFSETS).forEach(([stepId, offset])=>{
+    const d = new Date(base); d.setDate(d.getDate() + offset);
+    c.stepDates[stepId] = toInputDate(d);
+  });
+  saveData(DB); renderAll();
+  toast(`✅ ${c.company} 스케줄 자동 설정 완료 (입국일: ${c.entryDate})`, 'ok');
+}
+
+function fmtDate(dateStr) {
+  if(!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}.${m}.${day} (${DAYS_KO[d.getDay()]})`;
+}
+
+function setStepDate(cid, stepId, date) {
+  const c = DB.clients.find(x=>x.id==cid); if(!c) return;
+  if(!c.stepDates) c.stepDates={};
+  if(date) c.stepDates[stepId]=date;
+  else delete c.stepDates[stepId];
+  saveData(DB);
+  renderSchedule();
+}
+
+function renderSchedule(){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const endThisMonth = new Date(today.getFullYear(), today.getMonth()+1, 0);
+  const startNextMonth = new Date(today.getFullYear(), today.getMonth()+1, 1);
+
+  // 모든 클라이언트의 날짜가 설정된 step 수집
+  const items = [];
+  DB.clients.forEach(c=>{
+    const steps = STEPS[c.category]||[];
+    const doneSet = new Set(c.completedSteps||[]);
+    const dates = c.stepDates||{};
+    steps.forEach(s=>{
+      if(!dates[s.id]) return;
+      const d = new Date(dates[s.id]+'T00:00:00');
+      items.push({ c, s, d, isDone:doneSet.has(s.id), isPast:d<today, isToday:d.getTime()===today.getTime() });
+    });
+  });
+
+  // 날짜순 정렬 (완료항목은 맨 아래)
+  items.sort((a,b)=> a.isDone!==b.isDone ? (a.isDone?1:-1) : a.d-b.d);
+
+  const urgCnt  = items.filter(i=>!i.isDone && i.d<=endThisMonth).length;
+  const nextCnt = items.filter(i=>!i.isDone && i.d>=startNextMonth).length;
+  const doneCnt = items.filter(i=>i.isDone).length;
+
+  document.getElementById('sch-this').textContent = urgCnt;
+  document.getElementById('sch-next').textContent = nextCnt;
+  document.getElementById('sch-done').textContent = doneCnt;
+
+  const el=document.getElementById('sch-list'); if(!el) return;
+
+  if(!items.length){
+    el.innerHTML=`<div style="text-align:center;padding:50px;color:var(--muted)">
+      <div style="font-size:32px;margin-bottom:12px">📅</div>
+      <div style="font-size:14px;margin-bottom:8px">스케줄이 없습니다</div>
+      <div style="font-size:11px">고객별 상세 또는 법인 CRM 탭에서<br>각 단계 오른쪽 날짜 버튼을 클릭해 일정을 설정하세요</div>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = items.map(({c,s,d,isDone,isPast,isToday})=>{
+    const dateLabel = fmtDate(d.toISOString().slice(0,10));
+    const cls = isDone?'don':isPast?'urg':isToday?'urg':d<=endThisMonth?'urg':'';
+    const statusTag = isDone
+      ? `<span style="font-size:10px;color:var(--green);margin-left:8px">✓ 완료</span>`
+      : isPast
+        ? `<span style="font-size:10px;color:var(--red);margin-left:8px">⚠️ 지연</span>`
+        : isToday
+          ? `<span style="font-size:10px;color:var(--orange);margin-left:8px">● 오늘</span>`
+          : '';
+    return `<div class="si ${cls}">
+      <div class="si-date" style="min-width:140px">${dateLabel}</div>
+      <div style="flex:1">
+        <div class="si-title">${c.company} &mdash; ${s.name}${statusTag}</div>
+        <div class="si-client">${c.rep} &nbsp;·&nbsp; ${CAT_ICO[c.category]||''} ${CAT_LBL[c.category]||''} &nbsp;·&nbsp; <span style="color:var(--muted)">${s.timing}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// 서비스 현황
+// ═══════════════════════════════════════════════════════
+function renderSvcStat(){
+  const tbody=document.getElementById('svc-tbody'); if(!tbody) return;
+  const compClients=DB.clients.filter(c=>c.category==='company');
+  const total=compClients.length||1;
+  tbody.innerHTML=(SERVICES.company||[]).map((sv,i)=>{
+    const done=compClients.filter(c=>(c.services||[])[i]===1).length;
+    const prog=compClients.filter(c=>(c.services||[])[i]===2).length;
+    const none=compClients.filter(c=>!((c.services||[])[i])).length;
+    const pct=Math.round(done/Math.max(total,1)*100);
+    return `<tr>
+      <td>${i+1}</td><td>${sv}</td>
+      <td><span style="color:var(--green);font-weight:700">${done}명</span></td>
+      <td><span style="color:var(--orange);font-weight:700">${prog}명</span></td>
+      <td><span style="color:var(--muted)">${none}명</span></td>
+      <td>
+        <div class="pb" style="width:120px"><div class="pf" style="width:${pct}%"></div></div>
+        <div class="pt">${pct}%</div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// CRM PAGES
+// ═══════════════════════════════════════════════════════
+function renderCRM(cat){
+  if(!cat) return;
+  const con=document.getElementById('crm-'+cat); if(!con) return;
+  const clients=DB.clients.filter(c=>c.category===cat);
+  if(!clients.length){ con.innerHTML=`<div style="text-align:center;padding:40px;color:var(--muted)">등록된 ${CAT_LBL[cat]} 고객이 없습니다.<br><button class="btn bp" style="margin-top:12px" onclick="openAdd('${cat}')">+ 추가하기</button></div>`; return; }
+  con.innerHTML=clients.map(c=>buildCRMCard(c)).join('');
+}
+
+function buildCRMCard(c){
+  const steps=STEPS[c.category]||[];
+  const doneSet=new Set(c.completedSteps||[]);
+  const doneCnt=doneSet.size, total=steps.length;
+  const pct=total?Math.round(doneCnt/total*100):0;
+
+  const tlHTML=steps.map((s,i)=>{
+    const done=doneSet.has(s.id);
+    const curr=!done&&(i===0||doneSet.has(steps[i-1]?.id));
+    const dotCls=done?'done':curr?'curr':'todo';
+    const savedDate=(c.stepDates||{})[s.id]||'';
+    const dateLbl=savedDate?`<span style="font-size:9px;color:var(--blue)">📅 ${fmtDate(savedDate)}</span>`:'';
+    return `<div class="tli">
+      <div class="tl-left"><div class="tl-dot ${dotCls}"></div><div class="tl-line"></div></div>
+      <div class="tl-content">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="tl-title${done?' st':''}">${s.name}</span>
+          <span style="font-size:9px;background:#2a2a40;padding:1px 5px;border-radius:5px;color:var(--muted)">${s.phase}</span>
+          ${done?'<span style="font-size:9px;color:var(--green)">✓</span>':''}
+          ${curr?'<span style="font-size:9px;color:var(--orange)">← 현재</span>':''}
+          ${dateLbl}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap">
+          <span class="tl-timing">${s.timing}</span>
+          <input type="date" value="${savedDate}"
+            onchange="setStepDate(${c.id},'${s.id}',this.value)"
+            title="📅 일정 날짜 설정"
+            style="background:#1a1a2c;border:1px solid #444;color:var(--text);border-radius:4px;padding:2px 6px;font-size:10px;cursor:pointer">
+        </div>
+        <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">
+          ${done
+            ? `<button class="btn bg bsm" onclick="toggleStep(${c.id},'${s.id}','undo')">↩ 취소</button>`
+            : `<button class="btn bgr bsm" onclick="toggleStep(${c.id},'${s.id}','complete')">✓ 완료</button>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const svcList=c.category==='company'?SERVICES.company:c.category==='doctor'?SERVICES.doctor:null;
+  let svcSec='';
+  if(svcList){
+    svcSec=`<div style="margin-top:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:7px">📋 서비스 체크리스트</div>
+      <div class="svc-grid">${(svcList||[]).map((sv,i)=>{
+        const val=(c.services||[])[i]||0;
+        const cls=val===1?'d1':val===2?'d2':'d0';
+        const sym=val===1?'✓':val===2?'⋯':'—';
+        const col=val===1?'color:var(--green)':val===2?'color:var(--orange)':'color:var(--muted)';
+        return `<div class="svc-item" onclick="cycleSvc(${c.id},${i})">
+          <div class="svc-ck ${cls}">${sym}</div><span style="${col}">${i+1}. ${sv}</span>
+        </div>`;
+      }).join('')}</div></div>`;
+  }
+
+  const hasEntry = c.entryDate && c.entryDate !== 'TBD';
+  const hasSchedule = Object.keys(c.stepDates||{}).length > 0;
+  const autoBtn = (c.category==='company')
+    ? `<button class="btn bsm" onclick="autoSchedule(${c.id})"
+        style="background:${hasSchedule?'rgba(76,175,130,.15)':'rgba(184,151,42,.15)'};border:1px solid ${hasSchedule?'var(--green)':'var(--gold)'};color:${hasSchedule?'var(--green)':'var(--gold2)'};font-size:10px">
+        📅 ${hasSchedule?'스케줄 재설정':'입국일 기준 자동 스케줄'}
+       </button>`
+    : '';
+
+  return `<div class="cc">
+    <div class="cc-hd">
+      <div>
+        <div class="cc-title">${CAT_ICO[c.category]} ${c.company||''}</div>
+        <div class="cc-sub">${c.rep||''}${c.phone?' · ☎ '+c.phone:''}${c.entryDate?' · ✈️ '+c.entryDate:''}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:700;color:var(--gold2)">${pct}%</div>
+          <div style="font-size:10px;color:var(--muted)">${doneCnt}/${total}단계</div>
+        </div>
+        <span class="badge ${CAT_B[c.category]}">${CAT_ICO[c.category]} ${CAT_LBL[c.category]}</span>
+        <button class="btn bg bsm" onclick="openEdit(${c.id})">✏️</button>
+        <button class="btn br bsm" onclick="deleteC(${c.id})">🗑️</button>
+      </div>
+    </div>
+    ${!hasEntry && c.category==='company' ? `<div style="background:rgba(184,151,42,.08);border:1px solid rgba(184,151,42,.2);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:var(--gold2)">
+      ⚠️ 입국 예정일이 없습니다. <button class="btn bsm" onclick="openEdit(${c.id})" style="background:var(--gold);color:#000;margin-left:6px">✏️ 날짜 입력</button>
+    </div>` : ''}
+    ${autoBtn ? `<div style="margin-bottom:12px">${autoBtn}${!hasEntry?' <span style="font-size:10px;color:var(--muted);margin-left:6px">(입국일 필요)</span>':''}</div>` : ''}
+    <div class="cc-meta">
+      <div class="cc-mi"><label>결제금액</label><span style="color:var(--gold2)">${c.paymentAmount||'-'}</span></div>
+      <div class="cc-mi"><label>결제계좌</label><span>${c.paymentAccount||'-'}</span></div>
+      <div class="cc-mi"><label>메모</label><span style="font-size:11px;color:var(--muted)">${c.notes||'-'}</span></div>
+    </div>
+    <div class="cc-body">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:7px">🔄 단계별 진행 타임라인</div>
+        <div class="tl">${tlHTML}</div>
+      </div>
+      <div>${svcSec}</div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// MODAL (Add/Edit)
+// ═══════════════════════════════════════════════════════
+function openAdd(cat){
+  document.getElementById('modal-title').textContent='고객 추가';
+  document.getElementById('edit-id').value='';
+  ['f-co','f-rep','f-date','f-pay','f-acc','f-phone','f-phone-uae','f-email','f-entry','f-tg','f-notes'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  if(cat) document.getElementById('f-cat').value=cat;
+  updateFFields();
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function openEdit(id){
+  const c=DB.clients.find(x=>x.id==id); if(!c) return;
+  document.getElementById('modal-title').textContent='고객 편집';
+  document.getElementById('edit-id').value=id;
+  document.getElementById('f-cat').value=c.category||'company';
+  document.getElementById('f-co').value=c.company||'';
+  document.getElementById('f-rep').value=c.rep||'';
+  document.getElementById('f-date').value=c.contractDate||'';
+  document.getElementById('f-pay').value=c.paymentAmount||'';
+  document.getElementById('f-acc').value=c.paymentAccount||'';
+  document.getElementById('f-phone').value=c.phone||'';
+  document.getElementById('f-phone-uae').value=c.phoneUae||'';
+  document.getElementById('f-email').value=c.email||'';
+  document.getElementById('f-entry').value=c.entryDate||'';
+  document.getElementById('f-tg').value=c.telegramChatId||'';
+  document.getElementById('f-notes').value=c.notes||'';
+  updateFFields();
+  document.getElementById('modal-bg').classList.add('open');
+}
+
+function updateFFields(){
+  const cat=document.getElementById('f-cat')?.value;
+  const wrap=document.getElementById('f-entry-wrap');
+  if(wrap) wrap.style.display=['company','goldenvisa'].includes(cat)?'block':'none';
+}
+
+function closeMb(e){
+  if(e&&e.target!==document.getElementById('modal-bg')) return;
+  document.getElementById('modal-bg').classList.remove('open');
+}
+
+function saveClient(){
+  const editId=document.getElementById('edit-id').value;
+  const body={
+    category:document.getElementById('f-cat').value,
+    company:document.getElementById('f-co').value||'(미입력)',
+    rep:document.getElementById('f-rep').value||'(미입력)',
+    contractDate:document.getElementById('f-date').value,
+    paymentAmount:document.getElementById('f-pay').value,
+    paymentAccount:document.getElementById('f-acc').value,
+    phone:document.getElementById('f-phone').value,
+    phoneUae:document.getElementById('f-phone-uae').value,
+    email:document.getElementById('f-email').value,
+    entryDate:document.getElementById('f-entry').value,
+    telegramChatId:document.getElementById('f-tg').value,
+    notes:document.getElementById('f-notes').value,
+  };
+
+  if(editId) {
+    const idx=DB.clients.findIndex(x=>x.id==editId);
+    if(idx>=0) DB.clients[idx]={...DB.clients[idx],...body};
+    // 입국일 변경 + 법인 → 스케줄 자동 재계산
+    const updated = DB.clients[idx];
+    if(updated.category==='company' && updated.entryDate && updated.entryDate!=='TBD') {
+      const base = parseEntryDate(updated.entryDate);
+      if(base) {
+        if(!updated.stepDates) updated.stepDates={};
+        Object.entries(COMPANY_STEP_OFFSETS).forEach(([sid,offset])=>{
+          const d=new Date(base); d.setDate(d.getDate()+offset);
+          updated.stepDates[sid]=toInputDate(d);
+        });
+        toast('✅ 수정됨 + 스케줄 자동 설정됨','ok');
+      } else { toast('✅ 수정됨','ok'); }
+    } else { toast('✅ 수정됨','ok'); }
+  } else {
+    const newId=Math.max(0,...DB.clients.map(c=>c.id))+1;
+    const svcLen=body.category==='doctor'?9:body.category==='company'?16:0;
+    const newClient={
+      id:newId, ...body, completedSteps:[],
+      services:Array(svcLen).fill(0), stepDates:{}, createdAt:new Date().toISOString()
+    };
+    // 신규 + 법인 + 입국일 있으면 자동 스케줄
+    if(newClient.category==='company' && newClient.entryDate && newClient.entryDate!=='TBD') {
+      const base = parseEntryDate(newClient.entryDate);
+      if(base) {
+        Object.entries(COMPANY_STEP_OFFSETS).forEach(([sid,offset])=>{
+          const d=new Date(base); d.setDate(d.getDate()+offset);
+          newClient.stepDates[sid]=toInputDate(d);
+        });
+        toast('✅ 추가됨 + 스케줄 자동 설정됨','ok');
+      } else { toast('✅ 추가됨','ok'); }
+    } else { toast('✅ 추가됨','ok'); }
+    DB.clients.push(newClient);
+  }
+  saveData(DB);
+  document.getElementById('modal-bg').classList.remove('open');
+  renderAll();
+}
+
+function deleteC(id){
+  if(!confirm('정말 삭제하시겠습니까?')) return;
+  DB.clients=DB.clients.filter(x=>x.id!=id);
+  saveData(DB); renderAll(); toast('삭제됨','ok');
+}
+
+// ═══════════════════════════════════════════════════════
+// 연락처 & 발송 TAB
+// ═══════════════════════════════════════════════════════
+let emailRecipients = [];
+let smsRecipients   = [];
+
+function renderContacts() {
+  const q = (document.getElementById('ct-q')?.value||'').toLowerCase();
+  const tbody = document.getElementById('ct-tbody'); if(!tbody) return;
+  const list = DB.clients.filter(c=>!q||(c.company||'').toLowerCase().includes(q)||(c.rep||'').toLowerCase().includes(q));
+  tbody.innerHTML = list.map((c,i)=>`<tr>
+    <td>${i+1}</td>
+    <td style="font-weight:600">${c.company||''}</td>
+    <td>${c.rep||''}</td>
+    <td><span class="badge ${CAT_B[c.category]||'b-wait'}">${CAT_ICO[c.category]||''} ${CAT_LBL[c.category]||c.category}</span></td>
+    <td>${c.phone?`<a href="tel:${c.phone}" style="color:var(--blue);text-decoration:none">${c.phone}</a>`:'-'}</td>
+    <td>${c.phoneUae?`<a href="tel:${c.phoneUae}" style="color:var(--blue);text-decoration:none">${c.phoneUae}</a>`:'-'}</td>
+    <td>${c.email?`<a href="mailto:${c.email}" style="color:var(--gold2);text-decoration:none">${c.email}</a>`:'-'}</td>
+    <td><button class="btn bg bsm" onclick="openEdit(${c.id})">✏️</button></td>
+  </tr>`).join('')||`<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted)">연락처 없음</td></tr>`;
+}
+
+function copyAllEmails() {
+  const emails = DB.clients.map(c=>c.email).filter(Boolean);
+  if(!emails.length){ toast('등록된 이메일이 없습니다','err'); return; }
+  navigator.clipboard.writeText(emails.join(', ')).then(()=>toast(`📋 이메일 ${emails.length}개 복사됨`,'ok'));
+}
+
+function copyAllKR() {
+  const nums = DB.clients.map(c=>c.phone).filter(Boolean);
+  if(!nums.length){ toast('등록된 한국 번호가 없습니다','err'); return; }
+  navigator.clipboard.writeText(nums.join('\n')).then(()=>toast(`📋 번호 ${nums.length}개 복사됨`,'ok'));
+}
+
+function selectEmailRecip(type) {
+  let list;
+  if(type==='all') list = DB.clients;
+  else list = DB.clients.filter(c=>c.category===type);
+  emailRecipients = list.filter(c=>c.email).map(c=>c.email);
+  const noEmail = list.filter(c=>!c.email);
+  const box = document.getElementById('email-recip-box');
+  if(!emailRecipients.length){
+    box.innerHTML=`<span style="color:var(--red)">이메일이 등록된 고객이 없습니다</span>`;
+    return;
+  }
+  box.innerHTML = emailRecipients.map(e=>`<span style="color:var(--gold2)">${e}</span>`).join(' &nbsp;|&nbsp; ')
+    + (noEmail.length?`<br><span style="color:var(--muted);font-size:10px">⚠️ 이메일 미등록 ${noEmail.length}명 제외</span>`:'');
+  toast(`✉️ ${emailRecipients.length}명 선택됨`,'ok');
+}
+
+function sendEmail() {
+  if(!emailRecipients.length){ toast('수신자를 먼저 선택하세요','err'); return; }
+  const subj = encodeURIComponent(document.getElementById('email-subject').value||'[Tax Announcement] 안내');
+  const body = encodeURIComponent(document.getElementById('email-body').value||'');
+  const bcc = emailRecipients.join(',');
+  window.location.href = `mailto:?bcc=${bcc}&subject=${subj}&body=${body}`;
+}
+
+function copyEmailList() {
+  if(!emailRecipients.length){ toast('수신자를 먼저 선택하세요','err'); return; }
+  navigator.clipboard.writeText(emailRecipients.join(', ')).then(()=>toast(`📋 ${emailRecipients.length}개 주소 복사됨`,'ok'));
+}
+
+function selectSMSRecip(type) {
+  let list;
+  if(type==='kr-all') { list = DB.clients; smsRecipients = list.map(c=>c.phone).filter(Boolean); }
+  else if(type==='uae-all') { list = DB.clients; smsRecipients = list.map(c=>c.phoneUae).filter(Boolean); }
+  else if(type.startsWith('kr-')) { const cat=type.replace('kr-',''); list=DB.clients.filter(c=>c.category===cat); smsRecipients=list.map(c=>c.phone).filter(Boolean); }
+  else { list=DB.clients; smsRecipients=list.map(c=>c.phone).filter(Boolean); }
+
+  const box = document.getElementById('sms-recip-box');
+  if(!smsRecipients.length){
+    box.innerHTML=`<span style="color:var(--red)">등록된 번호가 없습니다</span>`; return;
+  }
+  box.innerHTML = smsRecipients.map(n=>`<span style="color:var(--blue)">${n}</span>`).join(' &nbsp;|&nbsp; ');
+  toast(`📱 ${smsRecipients.length}개 번호 선택됨`,'ok');
+}
+
+function copySMSBundle() {
+  if(!smsRecipients.length){ toast('수신자를 먼저 선택하세요','err'); return; }
+  const msg = document.getElementById('sms-body').value||'';
+  const txt = smsRecipients.join(', ')+'\n\n'+msg;
+  navigator.clipboard.writeText(txt).then(()=>toast(`📋 번호+메시지 복사됨 (${smsRecipients.length}명)`,'ok'));
+}
+
+function copyPhoneList() {
+  if(!smsRecipients.length){ toast('수신자를 먼저 선택하세요','err'); return; }
+  navigator.clipboard.writeText(smsRecipients.join('\n')).then(()=>toast(`📋 번호 ${smsRecipients.length}개 복사됨`,'ok'));
+}
+
+// SMS 글자 수 카운트
+document.addEventListener('DOMContentLoaded',()=>{
+  const ta=document.getElementById('sms-body');
+  if(ta) ta.addEventListener('input',()=>{
+    document.getElementById('sms-len').textContent=ta.value.length;
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+// DOCUSIGN INTEGRATION
+// ═══════════════════════════════════════════════════════
+function copyDsUrl(){
+  navigator.clipboard.writeText('http://localhost:3000/api/docusign-webhook')
+    .then(()=>toast('📋 Webhook URL 복사됨','ok'));
+}
+
+function openDsImport(){
+  // Reset fields
+  ['ds-co','ds-rep','ds-pay','ds-acc','ds-email','ds-phone','ds-entry','ds-json','ds-env'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  // Today's date as contract date
+  const today = toInputDate(new Date()).replace(/-/g,'.');
+  const dateEl = document.getElementById('ds-date');
+  if(dateEl) dateEl.value = today;
+  document.getElementById('ds-modal-bg').classList.add('open');
+}
+
+function closeDsModal(){
+  document.getElementById('ds-modal-bg').classList.remove('open');
+}
+
+// DocuSign JSON 필드 파서
+function parseDsPayload(payload) {
+  const signer = payload.recipients?.signers?.[0] || payload.signers?.[0] || {};
+  const cfArr  = payload.customFields?.textCustomFields || payload.customFields || [];
+  const cf = {};
+  cfArr.forEach(f=>{ if(f.name) cf[f.name] = f.value||''; });
+
+  return {
+    envelopeId:     payload.envelopeId || payload.EnvelopeID || '',
+    company:        cf['회사명'] || cf['companyName'] || '',
+    rep:            cf['대표자'] || signer.name || '',
+    category:       cf['카테고리'] || cf['category'] || 'company',
+    paymentAmount:  cf['계약금액'] || cf['paymentAmount'] || '',
+    paymentAccount: cf['결제계좌'] || cf['paymentAccount'] || '',
+    email:          cf['이메일'] || cf['email'] || signer.email || '',
+    phone:          cf['한국연락처'] || cf['phone'] || '',
+    phoneUae:       cf['두바이번호'] || cf['phoneUae'] || '',
+    entryDate:      cf['입국예정일'] || cf['entryDate'] || '',
+    contractDate:   cf['계약일'] || new Date().toISOString().slice(0,7).replace('-','.'),
+    notes:          `DocuSign 자동 등록 (${payload.envelopeId||''})`
+  };
+}
+
+function createClientFromDs(fields){
+  const newId = Math.max(0, ...DB.clients.map(c=>c.id)) + 1;
+  const cat = fields.category;
+  const svcLen = cat==='doctor'?9:cat==='company'?16:0;
+  const newClient = {
+    id: newId,
+    company:        fields.company || '(DocuSign 계약)',
+    rep:            fields.rep || '(미입력)',
+    category:       cat,
+    contractDate:   fields.contractDate,
+    paymentAmount:  fields.paymentAmount,
+    paymentAccount: fields.paymentAccount,
+    email:          fields.email,
+    phone:          fields.phone,
+    phoneUae:       fields.phoneUae,
+    entryDate:      fields.entryDate,
+    telegramChatId: '',
+    completedSteps: [],
+    services:       Array(svcLen).fill(0),
+    stepDates:      {},
+    notes:          fields.notes,
+    docusignId:     fields.envelopeId,
+    createdAt:      new Date().toISOString()
+  };
+  // 법인 + 입국일 있으면 스케줄 자동 계산
+  if(cat==='company' && newClient.entryDate) {
+    const base = parseEntryDate(newClient.entryDate);
+    if(base) {
+      Object.entries(COMPANY_STEP_OFFSETS).forEach(([sid,offset])=>{
+        const d=new Date(base); d.setDate(d.getDate()+offset);
+        newClient.stepDates[sid]=toInputDate(d);
+      });
+    }
+  }
+  DB.clients.push(newClient);
+  saveData(DB);
+  renderAll();
+  return newClient;
+}
+
+function importDsJson(){
+  const raw = document.getElementById('ds-json')?.value?.trim(); if(!raw) return;
+  try {
+    const payload = JSON.parse(raw);
+    if(payload.status && payload.status !== 'completed'){
+      toast('완료(completed) 상태의 계약만 가져올 수 있습니다','err'); return;
+    }
+    const fields = parseDsPayload(payload);
+    const nc = createClientFromDs(fields);
+    closeDsModal();
+    toast(`✅ DocuSign 계약 등록: ${nc.company} (${nc.rep})`,'ok');
+  } catch(e) {
+    toast('JSON 형식 오류: ' + e.message,'err');
+  }
+}
+
+function saveDsClient(){
+  // Manual form submit
+  const pasteVisible = document.getElementById('ds-paste-area')?.style?.display !== 'none';
+  if(pasteVisible){ importDsJson(); return; }
+
+  const fields = {
+    envelopeId:     document.getElementById('ds-env')?.value || ('DS-'+Date.now()),
+    company:        document.getElementById('ds-co')?.value || '(DocuSign 계약)',
+    rep:            document.getElementById('ds-rep')?.value || '(미입력)',
+    paymentAmount:  document.getElementById('ds-pay')?.value || '',
+    paymentAccount: document.getElementById('ds-acc')?.value || '',
+    phone:          document.getElementById('ds-phone')?.value || '',
+    phoneUae:       document.getElementById('ds-uae')?.value || '',
+    email:          document.getElementById('ds-email')?.value || '',
+    entryDate:      document.getElementById('ds-entry')?.value || '',
+    notes:          'DocuSign 수동 등록 (' + new Date().toLocaleDateString('ko-KR') + ')'
+  };
+  createClientFromDs(fields);
+  closeDsModal();
+}
+
+let _dsLastPoll = 0;
+function pollDocuSign() {
+  if (Date.now() - _dsLastPoll < 8000) return;
+  _dsLastPoll = Date.now();
+  fetch('/api/docusign-new')
+    .then(r => r.json())
+    .then(data => {
+      if (!data.newClients || !data.newClients.length) return;
+      let added = 0;
+      data.newClients.forEach(nc => {
+        if (!DB.clients.find(c => c.id === nc.id)) { DB.clients.push(nc); added++; }
+      });
+      if (added > 0) { saveData(DB); showTab(document.querySelector('.tab.active')?.dataset?.tab||'overview'); }
+    })
+    .catch(() => {});
+}
+setInterval(pollDocuSign, 8000);
+</script>
+</body>
+</html>
